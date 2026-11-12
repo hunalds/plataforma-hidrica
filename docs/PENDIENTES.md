@@ -24,6 +24,11 @@ Cada valor de esta lista es **configurable** en el sistema. Mientras no se confi
 - [ ] **P-12** Alivio (hm³) cuando la cota supera el nivel normal: hace falta el método oficial (curva del aliviadero o diferencia de volumen).
 - [ ] **P-13** Balance diario = entradas − salidas − gasto ecológico − alivio, frente al cambio de volumen observado. Falta la tolerancia aceptada.
 
+## Control de calidad e ingesta (Iteración 2)
+- [ ] **P-25** Parámetros del control de calidad: salto brusco (1 m/día por defecto, editable por embalse), aviso a más de 3 m sobre el nivel normal, diferencia de volumen mayor al 5 %, dato desactualizado a los 2 días. Validar con los operadores.
+- [ ] **P-26** Plazo para que el Operador corrija sus propios registros (hoy 24 h).
+- [ ] **P-27** Conector a la base SQL existente de MINAGUAS (M4): falta el motor, el esquema y el acceso (depende de P-06). Mientras tanto, la vía principal es la importación de Excel o CSV.
+
 ## Satélite
 - [ ] **P-14** Confirmar desde la **red de MINAGUAS** el acceso a CHIRPS, Copernicus y Planetary Computer. Desde la red de los autores ya funcionan todas (ver `docs/evidencias/HU-0.6-fuentes-satelitales.md`).
 - [ ] **P-15** Producto de humedad del suelo: ERA5-Land (0,1°) o SMAP (9 km, desde 2015). Justificar la elección en la tesis.

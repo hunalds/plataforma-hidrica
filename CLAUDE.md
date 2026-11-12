@@ -62,4 +62,10 @@ scripts/   utilidades (base de datos, verificaciones)
   - Curvas **sintéticas** cargadas en la base de desarrollo con `app.cli load-synthetic-curves`.
   - Pruebas del frontend: `tests/setup.ts` quita el `signal` de `Request` (incompatibilidad entre jsdom y undici con React Router).
   - El validador de correos rechaza los dominios `.test`, `.local` y `.example`: en pruebas se usa `@hidrica-zulia.com`.
-- **Siguiente:** Iteración 2 (M4 ingesta hidrológica + M12 cálculos operativos), a la espera del plan y la aprobación.
+- **Iteración 2 (M4, M12): ✅ cerrada el 2026-11-12.** Pruebas: 151 en el backend, 12 en ml y 31 en el frontend.
+  - Datos de desarrollo: `app.cli load-synthetic-curves` y `app.cli load-synthetic-measurements` (histórico sintético hasta el 2026-10-15).
+  - Ejemplos de importación en `ml/data/synthetic/ejemplos/` (regenerar con `cd ml; uv run python -m src.examples`).
+  - El router `measurements` se registra ANTES que `reservoirs` (`/reservoirs/status` frente a `/reservoirs/{code}`).
+  - Fórmulas M12 solo en `app/services/hydro_calcs.py`; reglas de calidad solo en `app/services/ingest.py::validate`.
+  - El bundle del frontend pesa unos 520 kB: en la Iteración 5 se hará división por rutas (requisito de menos de 3 s).
+- **Siguiente:** Iteración 3 (M5 ingesta satelital con CHIRPS, ERA5-Land y NDWI), a la espera del plan y la aprobación.

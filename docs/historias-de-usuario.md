@@ -146,3 +146,73 @@ Estados: ⬜ pendiente · 🔄 en curso · ✅ terminada
   - Menú lateral en escritorio y desplegable en móvil.
   - Embalses (lista y ficha con umbrales y curvas), Usuarios y Bitácora (solo Gerencia).
   - La sesión se renueva sola si el token vence.
+
+---
+
+## Iteración 2 — Datos (M4 ingesta hidrológica, M12 cálculos operativos)
+
+### HU-2.1 · Modelo del movimiento diario ✅
+- **Rol:** sistema · **Prioridad:** Alta · **Estimación:** 1
+- **Historia:** Como sistema, quiero guardar un registro por embalse y día con la cota, el volumen y los caudales para tener el histórico completo.
+- **Criterios de aceptación:**
+  - Tabla `daily_measurements` con unicidad (embalse, día).
+  - Se guarda el origen del volumen (reportado o calculado con la curva) y la versión de curva usada.
+  - Banderas de calidad, origen del dato (manual, importado o SQL) y lote de importación.
+
+### HU-2.2 · Cálculos operativos (M12) ✅
+- **Rol:** Ingeniero · **Prioridad:** Alta · **Estimación:** 2
+- **Historia:** Como Ingeniero, quiero que el sistema calcule el volumen útil, la disponibilidad, los días de reserva, el alivio y el balance diario con fórmulas documentadas.
+- **Criterios de aceptación:**
+  - Las fórmulas viven en un único módulo (`hydro_calcs.py`) con pruebas unitarias.
+  - Están marcadas como POR VALIDAR (P-09 a P-13).
+  - El alivio estimado por el balance coincide (±15 %) con el alivio simulado en el dataset sintético.
+
+### HU-2.3 · Control de calidad ✅
+- **Rol:** Ingeniero · **Prioridad:** Alta · **Estimación:** 3
+- **Historia:** Como Ingeniero, quiero que el sistema detecte datos imposibles o sospechosos antes de guardarlos para no contaminar el histórico ni los modelos.
+- **Criterios de aceptación:**
+  - Errores, que bloquean la fila: fecha inválida, futura o repetida; valor no numérico o faltante; negativo; compuertas fuera de 0–100 %; cota fuera de la curva; embalse desconocido o no asignado.
+  - Avisos, que se guardan con bandera: salto brusco (umbral por embalse), días faltantes, bajo el volumen muerto, muy sobre el nivel normal, volumen distinto al de la curva, sin curva, fecha ya existente.
+
+### HU-2.4 · Importación con vista previa ✅
+- **Rol:** Ingeniero · **Prioridad:** Alta · **Estimación:** 3
+- **Historia:** Como Ingeniero, quiero importar Excel o CSV y revisar una vista previa con los errores por fila antes de confirmar.
+- **Criterios de aceptación:**
+  - Plantillas Excel (con hoja de instrucciones) y CSV.
+  - Acepta `;` y coma decimal (formato venezolano).
+  - Nada se guarda hasta confirmar; se elige si sobrescribir los días existentes.
+  - Solo quien cargó el archivo confirma. El Operador no importa archivos.
+
+### HU-2.5 · Registro manual del Operador ✅
+- **Rol:** Operador · **Prioridad:** Alta · **Estimación:** 2
+- **Historia:** Como Operador, quiero registrar la lectura diaria desde el teléfono o la PC y ver de inmediato el volumen y los avisos.
+- **Criterios de aceptación:**
+  - Mismas reglas de calidad que la importación.
+  - Un día repetido devuelve 409.
+  - El Operador corrige sus propios registros solo durante 24 h; el Ingeniero corrige cualquiera.
+  - Toda corrección queda auditada con el valor anterior y el nuevo.
+
+### HU-2.6 · Estado operativo y semáforo ✅
+- **Rol:** todos · **Prioridad:** Alta · **Estimación:** 2
+- **Historia:** Como usuario, quiero ver el estado actual de cada embalse con un semáforo y explicaciones sencillas.
+- **Criterios de aceptación:**
+  - Semáforo verde, amarillo o rojo (escasez o alivio), y gris sin datos.
+  - Si no hay umbrales, se usan las cotas oficiales.
+  - Dato marcado como desactualizado después de 2 días.
+  - Balance hídrico por período.
+
+### HU-2.7 · Carga del dataset sintético y archivos de ejemplo ✅
+- **Rol:** equipo · **Prioridad:** Alta · **Estimación:** 1
+- **Historia:** Como equipo, quiero cargar el histórico sintético y tener archivos de ejemplo para demostrar la importación y el control de calidad.
+- **Criterios de aceptación:**
+  - `app.cli load-synthetic-measurements` carga 22.779 días hasta el 2026-10-15 con el mismo validador y sin errores.
+  - Tres archivos de ejemplo: válido en Excel, válido en formato venezolano y uno con 11 errores o avisos introducidos a propósito.
+
+### HU-2.8 · Interfaz de ingesta y estado ✅
+- **Rol:** todos · **Prioridad:** Alta · **Estimación:** 3
+- **Historia:** Como usuario, quiero ver el semáforo en cada embalse, registrar el día y, como Ingeniero, importar archivos con vista previa.
+- **Criterios de aceptación:**
+  - Tarjetas con semáforo, barra de disponibilidad, volumen útil y días de reserva.
+  - Ficha con estado actual, tabla del movimiento diario (7 días a 1 año) y balance.
+  - Pantallas "Registro diario" e "Importar datos".
+  - Ayudas en lenguaje sencillo en cada indicador.

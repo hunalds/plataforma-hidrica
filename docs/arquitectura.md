@@ -1,6 +1,6 @@
 # Arquitectura
 
-Documento vivo: se actualiza al cerrar cada iteración. **Estado: cierre de la Iteración 1 (2026-11-12).** Los bloques marcados *(previsto)* todavía no existen.
+Documento vivo: se actualiza al cerrar cada iteración. **Estado: cierre de la Iteración 2 (2026-11-12).** Los bloques marcados *(previsto)* todavía no existen.
 
 ## 1. Arquitectura lógica (componentes)
 
@@ -19,8 +19,8 @@ flowchart LR
     end
 
     subgraph Backend["Backend · FastAPI (Python 3.12)"]
-        API[Routers<br/>/health · /auth · /users · /audit · /reservoirs ✅<br/>ingesta · predicciones · alertas · reportes <i>(previsto)</i>]
-        SVC[Servicios<br/>auditoría · sesiones · correo · curvas ✅<br/>hydro_calcs · alertas · reportes <i>(previsto)</i>]
+        API[Routers<br/>/health · /auth · /users · /audit · /reservoirs ✅<br/>/ingest · /measurements · /status · /balance ✅<br/>predicciones · alertas · reportes <i>(previsto)</i>]
+        SVC[Servicios<br/>auditoría · sesiones · correo · curvas ✅<br/>hydro_calcs · ingest · tabular ✅<br/>alertas · reportes <i>(previsto)</i>]
         SAT[SatelliteProvider ✅<br/>mock · chirps · era5_land · copernicus · planetary_computer]
         JOBS[Tareas manuales<br/>BackgroundTasks <i>(previsto)</i>]
     end
@@ -101,6 +101,9 @@ erDiagram
     USERS ||--o{ REFRESH_TOKENS : sesiones
     USERS ||--o{ PASSWORD_RESET_TOKENS : recuperación
     USERS ||--o{ AUDIT_LOG : realiza
+    RESERVOIRS ||--o{ DAILY_MEASUREMENTS : "movimiento diario"
+    IMPORT_BATCHES ||--o{ DAILY_MEASUREMENTS : "origen"
+    USERS ||--o{ IMPORT_BATCHES : carga
 
     USERS {
         int id PK
@@ -159,6 +162,33 @@ erDiagram
         timestamptz expires_at
         timestamptz used_at
     }
+    DAILY_MEASUREMENTS {
+        int id PK
+        string reservoir_code FK
+        date day "UK con reservoir_code"
+        time reading_time
+        float level_m
+        float volume_hm3
+        enum volume_source "REPORTADO | CURVA"
+        int curve_version
+        float inflow_m3s
+        float outflow_m3s
+        float eco_flow_m3s
+        float gate_opening_pct
+        float intake_m3s
+        jsonb quality_flags
+        enum source "MANUAL | IMPORT | SQL"
+        uuid import_batch_id FK
+    }
+    IMPORT_BATCHES {
+        uuid id PK
+        string filename
+        enum status "PREVIEW | CONFIRMED | DISCARDED"
+        jsonb summary
+        jsonb issues
+        jsonb rows "filas válidas hasta confirmar"
+        int created_by FK
+    }
     AUDIT_LOG {
         int id PK
         timestamptz created_at
@@ -172,7 +202,7 @@ erDiagram
     }
 ```
 
-Previstas para las próximas iteraciones: `MEDICION_DIARIA` (M4), `OBSERVACION_SATELITAL` (M5), `MODELO_ML` y `PREDICCION` (M6), `ALERTA` (M9).
+Previstas para las próximas iteraciones: `OBSERVACION_SATELITAL` (M5), `MODELO_ML` y `PREDICCION` (M6), `ALERTA` (M9).
 
 ## 4. Casos de uso (Iteración 1)
 
@@ -225,7 +255,29 @@ sequenceDiagram
     end
 ```
 
-## 6. Decisiones de arquitectura
+## 6. Secuencia: importación con vista previa (Iteración 2)
+
+```mermaid
+sequenceDiagram
+    actor I as Ingeniero
+    participant F as Frontend
+    participant A as API /ingest
+    participant Q as Control de calidad (ingest.validate)
+    participant D as PostgreSQL
+    I->>F: elige archivo .xlsx / .csv
+    F->>A: POST /ingest/preview (multipart)
+    A->>Q: leer filas (formato ES/VE) y validar
+    Q->>D: curvas vigentes por fecha · días existentes · cota del día anterior
+    Q-->>A: filas válidas + errores y avisos por fila + resumen
+    A->>D: guardar ImportBatch (PREVIEW) · bitácora
+    A-->>F: resumen, problemas por fila, muestra
+    I->>F: revisa y confirma (¿sobrescribir existentes?)
+    F->>A: POST /ingest/batches/{id}/confirm
+    A->>D: INSERT … ON CONFLICT (embalse, día) · lote CONFIRMED · bitácora
+    A-->>F: insertadas / actualizadas / omitidas
+```
+
+## 7. Decisiones de arquitectura
 
 | Decisión | Razón |
 |---|---|
@@ -239,3 +291,7 @@ sequenceDiagram
 | Permisos en una matriz declarativa (`core/permissions.py`) | Refleja literalmente la tabla de la sección 6. El backend la aplica con `require()` y el frontend la recibe en `/auth/me`. |
 | Errores con `{"detail": {"code", "message"}}` | El frontend muestra el mensaje en español y decide según el código (p. ej. `PASSWORD_CHANGE_REQUIRED`). |
 | Curvas versionadas por fecha de vigencia | Los cálculos históricos usan la curva que regía en cada fecha, no la última cargada. |
+| Un solo validador para importación, registro manual, corrección y carga sintética | Las reglas de calidad son idénticas en todos los caminos de entrada y se prueban una sola vez. |
+| Vista previa persistida (`import_batches`) | El archivo se valida una vez; al confirmar se guarda exactamente lo que el usuario revisó. |
+| Indicadores M12 calculados al consultar (no guardados) | Si cambia la curva o se corrige una fórmula, todo el histórico se recalcula sin migrar datos. |
+| Fórmulas en funciones puras (`hydro_calcs.py`) | Se auditan y prueban sin base de datos. Es el único lugar que hay que cambiar cuando MINAGUAS valide las fórmulas. |
