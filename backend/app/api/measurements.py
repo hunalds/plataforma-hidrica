@@ -10,7 +10,7 @@ from __future__ import annotations
 from datetime import date, datetime, time, timedelta
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, Request, status
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -233,7 +233,12 @@ def list_measurements(
     summary="Registrar el movimiento del día (registro manual)",
 )
 def create_measurement(
-    code: str, body: MeasurementIn, request: Request, session: DbSession, user: IngestManager
+    code: str,
+    body: MeasurementIn,
+    request: Request,
+    background: BackgroundTasks,
+    session: DbSession,
+    user: IngestManager,
 ) -> SavedMeasurementOut:
     res = get_visible_reservoir(session, user, code)
     allowed = None if user.role == Role.GERENCIA else set(user.reservoir_codes)
@@ -268,6 +273,9 @@ def create_measurement(
     )
     session.commit()
     m = _get_measurement(session, res.code, body.day)
+    from app.api.alerts import schedule_evaluation
+
+    schedule_evaluation(background, request, [res.code])
     return SavedMeasurementOut(
         measurement=_with_calcs(m, res, _book(session, res.code)), warnings=issues_to_json(warnings)
     )

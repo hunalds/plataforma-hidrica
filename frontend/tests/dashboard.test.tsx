@@ -2,6 +2,11 @@ import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 
+// ECharts dibuja en <canvas>, que jsdom no tiene: se sustituye por su contenedor accesible.
+vi.mock('../src/components/charts/EChart', () => ({
+  EChart: ({ label }: { label: string }) => <div role="img" aria-label={label} />,
+}))
+
 vi.mock('react-leaflet', async () => {
   const React = await import('react')
   const Box = ({ children }: { children?: React.ReactNode }) => React.createElement('div', null, children)

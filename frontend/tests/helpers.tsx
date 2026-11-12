@@ -12,8 +12,8 @@ type Handler = (body: unknown, url: URL) => { status?: number; body: unknown }
 export type Routes = Record<string, Handler | unknown>
 
 const PERMISSIONS: Record<Role, Me['permissions']> = {
-  GERENCIA: { M1_auditoria: 'READ', M2_usuarios: 'MANAGE', M3_embalses: 'READ', M4_ingesta: 'READ', M8_mapa: 'READ', M9_alertas: 'READ', M5_satelite: 'READ', M6_prediccion: 'READ', M7_panel: 'READ', M11_ayuda: 'READ', M12_calculos: 'READ' },
-  INGENIERO: { M3_embalses: 'MANAGE', M4_ingesta: 'MANAGE', M8_mapa: 'READ', M9_alertas: 'MANAGE', M5_satelite: 'MANAGE', M6_prediccion: 'MANAGE', M7_panel: 'READ', M11_ayuda: 'READ', M12_calculos: 'MANAGE' },
+  GERENCIA: { M1_auditoria: 'READ', M2_usuarios: 'MANAGE', M3_embalses: 'READ', M4_ingesta: 'READ', M8_mapa: 'READ', M9_alertas: 'READ', M10_reportes: 'MANAGE', M5_satelite: 'READ', M6_prediccion: 'READ', M7_panel: 'READ', M11_ayuda: 'READ', M12_calculos: 'READ' },
+  INGENIERO: { M3_embalses: 'MANAGE', M4_ingesta: 'MANAGE', M8_mapa: 'READ', M9_alertas: 'MANAGE', M10_reportes: 'MANAGE', M5_satelite: 'MANAGE', M6_prediccion: 'MANAGE', M7_panel: 'READ', M11_ayuda: 'READ', M12_calculos: 'MANAGE' },
   OPERADOR: { M3_embalses: 'READ', M4_ingesta: 'MANAGE', M8_mapa: 'READ', M9_alertas: 'READ', M7_panel: 'READ', M11_ayuda: 'READ', M12_calculos: 'READ' },
 }
 

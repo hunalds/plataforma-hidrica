@@ -68,6 +68,11 @@ class Settings(BaseSettings):
     smtp_password: SecretStr = SecretStr("")
     smtp_from: str = ""
 
+    # --- Alertas (M9) ---
+    telegram_bot_token: SecretStr = SecretStr("")
+    alert_projection_days: int = 30  # alerta temprana si se proyecta cruzar un umbral en este plazo
+    alert_probability: float = 0.5  # probabilidad mínima para alerta proyectada (informativa desde 0,2)
+
     @field_validator("log_level")
     @classmethod
     def _upper(cls, value: str) -> str:

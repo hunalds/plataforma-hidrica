@@ -1,4 +1,4 @@
-import { Brain, ChartBar, ClipboardText, Drop, FileArrowUp, Gauge, GlobeHemisphereWest, List, MapTrifold, NotePencil, SignOut, UserCircle, Users, Waves, X } from '@phosphor-icons/react'
+import { Bell, Brain, ChartBar, ClipboardText, FileText, Question, Drop, FileArrowUp, Gauge, GlobeHemisphereWest, List, MapTrifold, NotePencil, SignOut, UserCircle, Users, Waves, X } from '@phosphor-icons/react'
 import { useEffect, useState, type ComponentType } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router'
 
@@ -22,10 +22,13 @@ const NAV: NavItem[] = [
   { to: '/embalses', label: es.nav.reservoirs, icon: Waves, module: MODULES.reservoirs },
   { to: '/registro', label: es.nav.dailyEntry, icon: NotePencil, module: MODULES.ingest, level: 'MANAGE' },
   { to: '/importar', label: es.nav.import, icon: FileArrowUp, module: MODULES.ingest, level: 'MANAGE', hideFor: ['OPERADOR'] },
+  { to: '/alertas', label: es.nav.alerts, icon: Bell, module: MODULES.alerts },
+  { to: '/reportes', label: es.nav.reports, icon: FileText, module: MODULES.reports, level: 'MANAGE' },
   { to: '/modelos', label: es.nav.models, icon: Brain, module: MODULES.prediction },
   { to: '/satelite', label: es.nav.satellite, icon: GlobeHemisphereWest, module: MODULES.satellite },
   { to: '/usuarios', label: es.nav.users, icon: Users, module: MODULES.users },
   { to: '/auditoria', label: es.nav.audit, icon: ClipboardText, module: MODULES.audit },
+  { to: '/ayuda', label: es.nav.help, icon: Question, module: MODULES.help },
   { to: '/estado', label: es.nav.status, icon: Gauge },
 ]
 

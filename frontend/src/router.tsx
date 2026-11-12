@@ -25,6 +25,9 @@ const SatellitePage = page(() => import('./pages/satellite/SatellitePage'), 'Sat
 const UsersPage = page(() => import('./pages/admin/UsersPage'), 'UsersPage')
 const AuditPage = page(() => import('./pages/admin/AuditPage'), 'AuditPage')
 const StatusPage = page(() => import('./pages/StatusPage'), 'StatusPage')
+const AlertsPage = page(() => import('./pages/alerts/AlertsPage'), 'AlertsPage')
+const ReportsPage = page(() => import('./pages/reports/ReportsPage'), 'ReportsPage')
+const HelpPage = page(() => import('./pages/help/HelpPage'), 'HelpPage')
 
 const s = (el: ReactNode) => <Suspense fallback={<Spinner label="Cargando…" />}>{el}</Suspense>
 
@@ -81,6 +84,18 @@ export const routes: RouteObject[] = [
           {
             element: <RequirePermission module={MODULES.satellite} />,
             children: [{ path: 'satelite', element: s(<SatellitePage />) }],
+          },
+          {
+            element: <RequirePermission module={MODULES.alerts} />,
+            children: [{ path: 'alertas', element: s(<AlertsPage />) }],
+          },
+          {
+            element: <RequirePermission module={MODULES.reports} level="MANAGE" />,
+            children: [{ path: 'reportes', element: s(<ReportsPage />) }],
+          },
+          {
+            element: <RequirePermission module={MODULES.help} />,
+            children: [{ path: 'ayuda', element: s(<HelpPage />) }],
           },
           {
             element: <RequirePermission module={MODULES.users} level="MANAGE" />,

@@ -15,12 +15,26 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import sessionmaker
 
 from app import __version__
-from app.api import audit, auth, dashboard, health, ingest, measurements, ml, reservoirs, satellite, users
+from app.api import (
+    alerts,
+    audit,
+    auth,
+    dashboard,
+    health,
+    ingest,
+    measurements,
+    ml,
+    reports,
+    reservoirs,
+    satellite,
+    users,
+)
 from app.core.config import Settings, get_settings
 from app.core.logging import configure_logging, get_logger
 from app.core.rate_limit import SlidingWindowLimiter
 from app.db import build_engine
 from app.services.email import build_email_sender
+from app.services.notifications import build_channels
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -48,6 +62,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.session_factory = sessionmaker(app.state.engine, expire_on_commit=False)
     app.state.login_limiter = SlidingWindowLimiter(settings.login_rate_limit_per_minute, 60)
     app.state.email_sender = build_email_sender(settings)
+    app.state.channels = build_channels(settings, app.state.email_sender)
 
     app.add_middleware(
         CORSMiddleware,
@@ -55,6 +70,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+        # El frontend (otro dominio, p. ej. Vercel) necesita leer el nombre del archivo de los reportes
+        expose_headers=["Content-Disposition"],
     )
 
     @app.middleware("http")
@@ -80,6 +97,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(satellite.router)
     app.include_router(ml.router)
     app.include_router(dashboard.router)
+    app.include_router(alerts.router)
+    app.include_router(reports.router)
     app.include_router(reservoirs.router)
     return app
 

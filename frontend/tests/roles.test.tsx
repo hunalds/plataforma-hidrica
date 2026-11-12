@@ -13,9 +13,9 @@ function navLinks() {
 
 describe('Navegación y permisos por rol (HU-1.8)', () => {
   it.each([
-    ['GERENCIA', ['Panel principal', 'Mapa', 'Embalses', 'Modelos de predicción', 'Datos satelitales', 'Usuarios', 'Bitácora', 'Estado del sistema']],
-    ['INGENIERO', ['Panel principal', 'Mapa', 'Embalses', 'Registro diario', 'Importar datos', 'Modelos de predicción', 'Datos satelitales', 'Estado del sistema']],
-    ['OPERADOR', ['Panel principal', 'Mapa', 'Embalses', 'Registro diario', 'Estado del sistema']],
+    ['GERENCIA', ['Panel principal', 'Mapa', 'Embalses', 'Alertas', 'Reportes', 'Modelos de predicción', 'Datos satelitales', 'Usuarios', 'Bitácora', 'Ayuda', 'Estado del sistema']],
+    ['INGENIERO', ['Panel principal', 'Mapa', 'Embalses', 'Registro diario', 'Importar datos', 'Alertas', 'Reportes', 'Modelos de predicción', 'Datos satelitales', 'Ayuda', 'Estado del sistema']],
+    ['OPERADOR', ['Panel principal', 'Mapa', 'Embalses', 'Registro diario', 'Alertas', 'Ayuda', 'Estado del sistema']],
   ] as const)('el menú de %s muestra solo sus módulos', async (role, expected) => {
     renderApp('/', { 'GET /reservoirs': [tule] }, makeMe(role))
     await screen.findByRole('heading', { name: 'Tulé' })

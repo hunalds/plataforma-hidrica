@@ -25,7 +25,7 @@ function ComparisonChart() {
       q.data && {
         animation: false,
         textStyle: { fontFamily: CHART.font },
-        grid: { left: 48, right: 96, top: 32, bottom: 32 },
+        grid: { left: 48, right: 96, top: 64, bottom: 32 },
         legend: { top: 0, left: 0, textStyle: { color: CHART.textSecondary } },
         tooltip: { trigger: 'axis', valueFormatter: (v: unknown) => (typeof v === 'number' ? `${fmt(v, 1)} %` : '—') },
         xAxis: { type: 'time', ...baseAxis, splitLine: { show: false } },
@@ -41,7 +41,7 @@ function ComparisonChart() {
           endLabel: { show: true, formatter: '{a}', color: CHART.textPrimary, fontWeight: 600 },
           markLine:
             s.reservoir_code === q.data[0].reservoir_code
-              ? { symbol: 'none', silent: true, lineStyle: { type: 'dashed', color: CHART.textSecondary }, label: { formatter: 'Nivel normal (100 %)', color: CHART.textSecondary }, data: [{ yAxis: 100 }] }
+              ? { symbol: 'none', silent: true, lineStyle: { type: 'dashed', color: CHART.textSecondary }, label: { position: 'insideStartTop', formatter: 'Nivel normal (100 %)', color: CHART.textSecondary }, data: [{ yAxis: 100 }] }
               : undefined,
         })),
       },

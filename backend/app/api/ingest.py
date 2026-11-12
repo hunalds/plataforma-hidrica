@@ -11,7 +11,7 @@ import uuid
 from datetime import datetime
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, File, Request, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Request, UploadFile
 from fastapi.responses import PlainTextResponse, StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy import select
@@ -198,7 +198,12 @@ def get_batch(batch_id: uuid.UUID, session: DbSession, _: Reader) -> BatchOut:
     "/batches/{batch_id}/confirm", response_model=ConfirmOut, summary="Confirmar y guardar las filas válidas"
 )
 def confirm(
-    batch_id: uuid.UUID, body: ConfirmIn, request: Request, session: DbSession, user: Importer
+    batch_id: uuid.UUID,
+    body: ConfirmIn,
+    request: Request,
+    background: BackgroundTasks,
+    session: DbSession,
+    user: Importer,
 ) -> ConfirmOut:
     batch = _get_batch(session, batch_id)
     if batch.status != BatchStatus.PREVIEW:
@@ -209,6 +214,7 @@ def confirm(
         raise api_error(
             422, "NO_VALID_ROWS", "No hay filas válidas para guardar. Corrige el archivo y vuelve a cargarlo."
         )
+    codes = sorted({r["reservoir_code"] for r in batch.rows})
     result = save_rows(
         session,
         batch.rows,
@@ -235,6 +241,9 @@ def confirm(
         ip=client_ip(request),
     )
     session.commit()
+    from app.api.alerts import schedule_evaluation
+
+    schedule_evaluation(background, request, codes)
     return ConfirmOut(inserted=result.inserted, updated=result.updated, skipped=result.skipped)
 
 

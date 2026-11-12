@@ -141,7 +141,31 @@ async function request<T>(method: Method, path: string, body?: unknown, retry = 
   return data as T
 }
 
+/** Descarga un archivo autenticado (reportes) y lo guarda con el nombre que indica el servidor. */
+async function download(path: string, retry = true): Promise<string> {
+  const headers: Record<string, string> = {}
+  if (accessToken) headers.Authorization = `Bearer ${accessToken}`
+  const res = await fetch(`${API_URL}${path}`, { headers })
+  if (res.status === 401 && retry) {
+    if (await refreshSession()) return download(path, false)
+    onSessionLost?.()
+  }
+  if (!res.ok) throw new ApiError(res.status, await res.json().catch(() => null))
+  const name = /filename="([^"]+)"/.exec(res.headers.get('Content-Disposition') ?? '')?.[1] ?? 'reporte'
+  const url = URL.createObjectURL(await res.blob())
+  const a = document.createElement('a')
+  a.href = url
+  a.download = name
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+  return name
+}
+
 export const api = {
+  download,
+  delete: <T>(path: string) => request<T>('DELETE', path),
   get: <T>(path: string) => request<T>('GET', path),
   post: <T>(path: string, body?: unknown) => request<T>('POST', path, body),
   patch: <T>(path: string, body?: unknown) => request<T>('PATCH', path, body),
