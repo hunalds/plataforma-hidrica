@@ -9,10 +9,6 @@ Separador de CSV: coma o punto y coma. Decimales con punto o con coma (si el sep
 
 from __future__ import annotations
 
-import csv
-import io
-import re
-import unicodedata
 from bisect import bisect_left
 from dataclasses import dataclass
 from datetime import date
@@ -21,9 +17,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.reservoir import ElevationCurve
+from app.services.tabular import TableReadError, map_columns, read_rows, to_float
 
 MAX_ROWS = 20_000
-MAX_BYTES = 5 * 1024 * 1024
 
 _ALIASES = {
     "elevation": {"cota", "cota_msnm", "elevacion", "nivel", "cota_m"},
@@ -49,62 +45,12 @@ class CurveFileError(ValueError):
         self.rows = rows or []
 
 
-def _normalize_header(h: object) -> str:
-    text = unicodedata.normalize("NFKD", str(h or "")).encode("ascii", "ignore").decode().lower().strip()
-    text = re.sub(r"\(.*?\)", "", text)  # "Cota (m.s.n.m.)" -> "cota"
-    return re.sub(r"[^a-z0-9]+", "_", text).strip("_")
-
-
-def _to_float(value: object) -> float | None:
-    if value is None:
-        return None
-    if isinstance(value, int | float):
-        return float(value)
-    text = str(value).strip().replace(" ", "")
-    if not text:
-        return None
-    if "," in text and "." not in text:
-        text = text.replace(",", ".")
-    return float(text)
-
-
-def _read_rows(content: bytes, filename: str) -> list[list[object]]:
-    name = filename.lower()
-    if name.endswith((".xlsx", ".xlsm")):
-        from openpyxl import load_workbook
-
-        try:
-            wb = load_workbook(io.BytesIO(content), read_only=True, data_only=True)
-        except Exception as exc:  # noqa: BLE001 — cualquier archivo dañado se reporta igual
-            raise CurveFileError(
-                "No se pudo leer el archivo Excel. Verifica que sea un .xlsx válido."
-            ) from exc
-        ws = wb.worksheets[0]
-        return [list(r) for r in ws.iter_rows(values_only=True, max_row=MAX_ROWS + 1)]
-    if name.endswith((".csv", ".txt")):
-        text = content.decode("utf-8-sig", errors="replace")
-        first = text.splitlines()[0] if text else ""
-        delimiter = ";" if first.count(";") > first.count(",") else ","
-        return [row for row in csv.reader(io.StringIO(text), delimiter=delimiter)]
-    raise CurveFileError("Formato no soportado. Usa un archivo .csv o .xlsx.")
-
-
 def parse_curve_file(content: bytes, filename: str) -> list[CurvePoint]:
-    if len(content) > MAX_BYTES:
-        raise CurveFileError("El archivo supera 5 MB.")
-    rows = [r for r in _read_rows(content, filename) if any(c not in (None, "") for c in r)]
-    if not rows:
-        raise CurveFileError("El archivo está vacío.")
-    if len(rows) > MAX_ROWS + 1:
-        raise CurveFileError(f"El archivo supera {MAX_ROWS} filas.")
-
-    headers = [_normalize_header(h) for h in rows[0]]
-    index: dict[str, int] = {}
-    for field, aliases in _ALIASES.items():
-        for i, h in enumerate(headers):
-            if h in aliases:
-                index[field] = i
-                break
+    try:
+        rows = read_rows(content, filename, MAX_ROWS)
+    except TableReadError as exc:
+        raise CurveFileError(str(exc)) from None
+    index = map_columns(rows[0], _ALIASES)
     missing = [f for f in ("elevation", "volume_hm3") if f not in index]
     if missing:
         names = {"elevation": "cota", "volume_hm3": "volumen"}
@@ -123,9 +69,9 @@ def parse_curve_file(content: bytes, filename: str) -> list[CurvePoint]:
             return row[i] if i is not None and i < len(row) else None
 
         try:
-            h = _to_float(cell("elevation"))
-            v = _to_float(cell("volume_hm3"))
-            a = _to_float(cell("area_km2"))
+            h = to_float(cell("elevation"))
+            v = to_float(cell("volume_hm3"))
+            a = to_float(cell("area_km2"))
         except ValueError:
             errors.append((n, "Valor no numérico."))
             continue
