@@ -39,5 +39,22 @@ scripts/   utilidades (base de datos, verificaciones)
 - Agente: `data-scientist` para el análisis exploratorio y la revisión del backtesting.
 - Cómo reinstalarlas: `docs/herramientas-ia.md`.
 
+## Comandos frecuentes
+- Verificación completa: `powershell -ExecutionPolicy Bypass -File scripts\check.ps1`
+- Backend: `cd backend; uv run uvicorn app.main:app --reload` (http://localhost:8000/docs)
+- Migraciones: `cd backend; uv run alembic upgrade head` (y con `APP_ENV=test` para la base de pruebas)
+- Frontend: `cd frontend; npm run dev` (http://localhost:5173)
+- Dataset sintético: `cd ml; uv run python -m src.synthetic`
+- Base de datos (una sola vez): `scripts\db\setup_db.ps1`; verificar con `uv run --project backend python scripts/check_db.py`
+- Conectividad satelital: `uv run --project backend python scripts/check_satellite_sources.py`
+- uv está en `%LOCALAPPDATA%/Microsoft/WinGet/Packages/astral-sh.uv_*` y no siempre aparece en el PATH de la terminal.
+
+## Notas técnicas
+- `ruff` del backend: `alembic` está declarado como paquete de terceros (la carpeta `backend/alembic/` lo confundía).
+- `httpx2` (sugerido por un aviso de Starlette) **no se instala**: es un paquete desconocido. Se mantiene `httpx`.
+- Los `.ps1` se guardan en UTF-8 **con BOM** (PowerShell 5.1); el resto del repositorio en LF (`.gitattributes`).
+- ARCO-ERA5 es demasiado lento (~7 min/día). Para la humedad del suelo se usa ERA5-Land del CDS (C-12).
+
 ## Estado
-- **Iteración 0 (Exploración):** en curso. HU-0.1 y HU-0.2 completadas. BD: `scripts/db/setup_db.ps1` + `scripts/check_db.py`. uv está en `%LOCALAPPDATA%/Microsoft/WinGet/Packages/astral-sh.uv_*` (no siempre en el PATH de la terminal).
+- **Iteración 0 (Exploración): ✅ cerrada el 2026-11-12.** HU-0.1 a HU-0.7 completas. Pruebas: 19 en el backend, 12 en ml y 5 en el frontend.
+- **Siguiente:** Iteración 1 (M1 autenticación, M2 usuarios y roles, M3 embalses), a la espera del plan y la aprobación.
