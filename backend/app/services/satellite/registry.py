@@ -5,17 +5,26 @@ from __future__ import annotations
 from app.services.satellite.base import SatelliteProvider
 from app.services.satellite.mock import MockProvider
 
-# Fuentes previstas. Las reales se implementan en la Iteración 3 (M5), según la verificación
-# de conectividad de HU-0.6 (docs/evidencias/conectividad-fuentes-*.json).
+# Fuentes alternativas previstas (no implementadas): requieren cuenta. Ver docs/evidencias/HU-0.6.
 PLANNED_PROVIDERS = {
-    "chirps": "Precipitación diaria · dynamical.org / UCSB (sin cuenta)",
-    "era5_land": "Humedad del suelo · Copernicus CDS (cuenta gratuita)",
-    "copernicus": "NDWI / superficie de agua · Sentinel-2 en Copernicus Data Space",
-    "planetary_computer": "NDWI / superficie de agua · Sentinel-2 y Landsat en Planetary Computer",
+    "era5_land_cds": "Humedad del suelo · Copernicus CDS (requiere cuenta gratuita)",
+    "copernicus": "NDWI / superficie de agua · Sentinel-2 en Copernicus Data Space (requiere cuenta)",
     "gee": "Google Earth Engine (opcional, descartado por ahora: C-10)",
 }
 
-_IMPLEMENTED: dict[str, type[SatelliteProvider]] = {"mock": MockProvider}
+
+def _implemented() -> dict[str, type[SatelliteProvider]]:
+    # Importación diferida: las librerías geoespaciales pesadas solo se cargan si se usan
+    from app.services.satellite.chirps import ChirpsProvider
+    from app.services.satellite.openmeteo import OpenMeteoSoilProvider
+    from app.services.satellite.water import PlanetaryComputerWaterProvider
+
+    return {
+        "mock": MockProvider,
+        "chirps": ChirpsProvider,
+        "era5_land_openmeteo": OpenMeteoSoilProvider,
+        "planetary_computer": PlanetaryComputerWaterProvider,
+    }
 
 
 class UnknownProviderError(ValueError):
@@ -24,10 +33,9 @@ class UnknownProviderError(ValueError):
 
 def get_provider(name: str) -> SatelliteProvider:
     key = name.strip().lower()
-    if key in _IMPLEMENTED:
-        return _IMPLEMENTED[key]()
+    implemented = _implemented()
+    if key in implemented:
+        return implemented[key]()
     if key in PLANNED_PROVIDERS:
-        raise NotImplementedError(
-            f"La fuente {key!r} está prevista para la Iteración 3: {PLANNED_PROVIDERS[key]}"
-        )
+        raise NotImplementedError(f"La fuente {key!r} aún no está implementada: {PLANNED_PROVIDERS[key]}")
     raise UnknownProviderError(f"Fuente satelital desconocida: {name!r}")
