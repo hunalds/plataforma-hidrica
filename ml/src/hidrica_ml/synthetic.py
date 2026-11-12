@@ -14,7 +14,7 @@ Modelo (simplificado, físicamente coherente):
     para validar después los cálculos operativos (M12) y los modelos (M6).
 
 Uso (desde ml/):
-    uv run python -m src.synthetic --seed 2026 --end 2026-10-31
+    uv run python -m hidrica_ml.synthetic --seed 2026 --end 2026-10-31
 """
 
 from __future__ import annotations
@@ -28,9 +28,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from src.schema import COLUMN_NAMES, M3S_TO_HM3_PER_DAY
+from hidrica_ml.schema import COLUMN_NAMES, M3S_TO_HM3_PER_DAY
 
-ML_DIR = Path(__file__).resolve().parents[1]
+ML_DIR = Path(__file__).resolve().parents[2]
 CONFIG_PATH = ML_DIR / "config" / "embalses.json"
 DEFAULT_OUT = ML_DIR / "data" / "synthetic"
 GENERATOR_VERSION = "1.0.0"

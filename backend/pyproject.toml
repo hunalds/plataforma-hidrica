@@ -9,6 +9,7 @@ dependencies = [
     "email-validator>=2.2",
     "fastapi>=0.115",
     "geoalchemy2>=0.21.0",
+    "hidrica-ml",
     "numpy>=2.0",
     "openpyxl>=3.1",
     "planetary-computer>=1.0",
@@ -55,3 +56,6 @@ known-first-party = ["app"]
 [tool.ruff.lint.flake8-bugbear]
 # Patrón estándar de FastAPI: Query/Depends/File/Form en los valores por defecto
 extend-immutable-calls = ["fastapi.Query", "fastapi.Depends", "fastapi.File", "fastapi.Form"]
+
+[tool.uv.sources]
+hidrica-ml = { path = "../ml", editable = true }

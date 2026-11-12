@@ -44,7 +44,7 @@ scripts/   utilidades (base de datos, verificaciones)
 - Backend: `cd backend; uv run uvicorn app.main:app --reload` (http://localhost:8000/docs)
 - Migraciones: `cd backend; uv run alembic upgrade head` (y con `APP_ENV=test` para la base de pruebas)
 - Frontend: `cd frontend; npm run dev` (http://localhost:5173)
-- Dataset sintético: `cd ml; uv run python -m src.synthetic`
+- Dataset sintético: `cd ml; uv run python -m hidrica_ml.synthetic`
 - Base de datos (una sola vez): `scripts\db\setup_db.ps1`; verificar con `uv run --project backend python scripts/check_db.py`
 - Conectividad satelital: `uv run --project backend python scripts/check_satellite_sources.py`
 - uv está en `%LOCALAPPDATA%/Microsoft/WinGet/Packages/astral-sh.uv_*` y no siempre aparece en el PATH de la terminal.
@@ -64,7 +64,7 @@ scripts/   utilidades (base de datos, verificaciones)
   - El validador de correos rechaza los dominios `.test`, `.local` y `.example`: en pruebas se usa `@hidrica-zulia.com`.
 - **Iteración 2 (M4, M12): ✅ cerrada el 2026-11-12.** Pruebas: 151 en el backend, 12 en ml y 31 en el frontend.
   - Datos de desarrollo: `app.cli load-synthetic-curves` y `app.cli load-synthetic-measurements` (histórico sintético hasta el 2026-10-15).
-  - Ejemplos de importación en `ml/data/synthetic/ejemplos/` (regenerar con `cd ml; uv run python -m src.examples`).
+  - Ejemplos de importación en `ml/data/synthetic/ejemplos/` (regenerar con `cd ml; uv run python -m hidrica_ml.examples`).
   - El router `measurements` se registra ANTES que `reservoirs` (`/reservoirs/status` frente a `/reservoirs/{code}`).
   - Fórmulas M12 solo en `app/services/hydro_calcs.py`; reglas de calidad solo en `app/services/ingest.py::validate`.
   - El bundle del frontend pesa unos 520 kB: en la Iteración 5 se hará división por rutas (requisito de menos de 3 s).

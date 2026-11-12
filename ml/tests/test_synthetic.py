@@ -9,8 +9,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.schema import COLUMN_NAMES, M3S_TO_HM3_PER_DAY
-from src.synthetic import curve_for, curve_table, generate, load_reservoirs, write_dataset
+from hidrica_ml.schema import COLUMN_NAMES, M3S_TO_HM3_PER_DAY
+from hidrica_ml.synthetic import curve_for, curve_table, generate, load_reservoirs, write_dataset
 
 END = date(2026, 10, 31)
 

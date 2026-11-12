@@ -1,6 +1,6 @@
 # ⚠️ Archivos de EJEMPLO sintéticos
 
-Generados con `uv run python -m src.examples` a partir de `movimiento_diario_sintetico.csv` (fechas 2026-10-16 a 2026-10-31). No son mediciones de MINAGUAS.
+Generados con `uv run python -m hidrica_ml.examples` a partir de `movimiento_diario_sintetico.csv` (fechas 2026-10-16 a 2026-10-31). No son mediciones de MINAGUAS.
 
 | Archivo | Para qué sirve |
 |---|---|

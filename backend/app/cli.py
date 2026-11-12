@@ -155,7 +155,7 @@ def cmd_load_synthetic_measurements(args: argparse.Namespace) -> int:
     path = Path(args.file)
     if not path.exists():
         print(
-            f"No se encontró {path}. Genera el dataset con: cd ml; uv run python -m src.synthetic",
+            f"No se encontró {path}. Genera el dataset con: cd ml; uv run python -m hidrica_ml.synthetic",
             file=sys.stderr,
         )
         return 1

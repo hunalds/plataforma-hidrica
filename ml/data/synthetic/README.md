@@ -1,12 +1,12 @@
 # ⚠️ Dataset SINTÉTICO — no son datos reales
 
-Los archivos de esta carpeta se **generan artificialmente** con [`ml/src/synthetic.py`](../../src/synthetic.py) para desarrollar y probar la plataforma mientras llegan los históricos oficiales de MINAGUAS. **No deben citarse como mediciones de los embalses** ni usarse para conclusiones de la tesis sobre los embalses reales.
+Los archivos de esta carpeta se **generan artificialmente** con [`ml/src/hidrica_ml/synthetic.py`](../../src/hidrica_ml/synthetic.py) para desarrollar y probar la plataforma mientras llegan los históricos oficiales de MINAGUAS. **No deben citarse como mediciones de los embalses** ni usarse para conclusiones de la tesis sobre los embalses reales.
 
 ## Archivos
 
 | Archivo | Contenido |
 |---|---|
-| `movimiento_diario_sintetico.csv` | Registro diario con las **mismas columnas que la plantilla de importación** ([`ml/src/schema.py`](../../src/schema.py)). Tulé y Manuelote desde 2005-01-01 y Tres Ríos desde 2008-01-01, hasta 2026-10-31. |
+| `movimiento_diario_sintetico.csv` | Registro diario con las **mismas columnas que la plantilla de importación** ([`ml/src/hidrica_ml/schema.py`](../../src/hidrica_ml/schema.py)). Tulé y Manuelote desde 2005-01-01 y Tres Ríos desde 2008-01-01, hasta 2026-10-31. |
 | `verdad_sintetica.csv` | Variables ocultas de la simulación que no se miden en sitio: volumen exacto, **alivio**, **evaporación** y área. Sirve para validar los cálculos de M12 y los modelos de M6. |
 | `curva_cota_volumen_<embalse>_sintetica.csv` | Curva cota–área–volumen **inventada** (forma potencial). La reemplazará la curva oficial (P-03). |
 | `metadata.json` | Semilla, versión del generador, rango de fechas y la marca `"SINTETICO": true` |
@@ -15,7 +15,7 @@ Los archivos de esta carpeta se **generan artificialmente** con [`ml/src/synthet
 
 ```bash
 cd ml
-uv run python -m src.synthetic --seed 2026 --end 2026-10-31
+uv run python -m hidrica_ml.synthetic --seed 2026 --end 2026-10-31
 ```
 
 Con la misma semilla siempre se obtiene el mismo resultado.

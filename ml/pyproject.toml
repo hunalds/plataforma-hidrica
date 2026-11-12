@@ -1,11 +1,21 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
-name = "plataforma-hidrica-ml"
+name = "hidrica-ml"
 version = "0.1.0"
 requires-python = ">=3.12"
+description = "Modelos de predicción de disponibilidad hídrica (tesis URBE)"
 dependencies = [
+    "matplotlib>=3.9",
     "numpy>=2.5.4",
     "openpyxl>=3.1.5",
     "pandas>=3.1.1",
+    "scikit-learn>=1.5",
+    "scipy>=1.13",
+    "torch>=2.4",
+    "xgboost>=2.1",
 ]
 
 [dependency-groups]
@@ -16,7 +26,6 @@ dev = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["."]
 addopts = "-q"
 
 [tool.ruff]
@@ -27,4 +36,7 @@ target-version = "py312"
 select = ["E", "F", "I", "B", "UP", "N"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["src"]
+known-first-party = ["hidrica_ml"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/hidrica_ml"]

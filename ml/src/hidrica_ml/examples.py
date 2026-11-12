@@ -5,7 +5,7 @@ Se toman del dataset sintético las fechas 2026-10-16 a 2026-10-31. La carga ini
 datos "nuevos" al importarlos, como ocurriría en la operación diaria.
 
 Uso (desde ml/):
-    uv run python -m src.examples
+    uv run python -m hidrica_ml.examples
 """
 
 from __future__ import annotations
@@ -18,9 +18,9 @@ from pathlib import Path
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill
 
-from src.schema import COLUMN_NAMES
+from hidrica_ml.schema import COLUMN_NAMES
 
-ML_DIR = Path(__file__).resolve().parents[1]
+ML_DIR = Path(__file__).resolve().parents[2]
 SOURCE = ML_DIR / "data" / "synthetic" / "movimiento_diario_sintetico.csv"
 OUT = ML_DIR / "data" / "synthetic" / "ejemplos"
 START, END = date(2026, 10, 16), date(2026, 10, 31)
@@ -125,7 +125,7 @@ def build() -> dict[str, str]:
     readme = OUT / "README.md"
     readme.write_text(
         "# ⚠️ Archivos de EJEMPLO sintéticos\n\n"
-        "Generados con `uv run python -m src.examples` a partir de `movimiento_diario_sintetico.csv` "
+        "Generados con `uv run python -m hidrica_ml.examples` a partir de `movimiento_diario_sintetico.csv` "
         f"(fechas {START.isoformat()} a {END.isoformat()}). No son mediciones de MINAGUAS.\n\n"
         "| Archivo | Para qué sirve |\n|---|---|\n"
         f"| `{valid.name}` | Importación correcta de 48 filas (3 embalses × 16 días) |\n"
