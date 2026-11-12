@@ -83,8 +83,9 @@ def test_invalid_range_and_unsupported_variable_are_rejected():
 
 
 def test_registry_planned_and_unknown_providers():
-    with pytest.raises(NotImplementedError, match="Iteración 3"):
-        get_provider("chirps")
+    with pytest.raises(NotImplementedError, match="aún no está implementada"):
+        get_provider("era5_land_cds")
+    assert get_provider("chirps").name == "chirps"
     with pytest.raises(UnknownProviderError):
         get_provider("no-existe")
 

@@ -5,6 +5,8 @@
     uv run python -m app.cli demo-users                 # usuarios de prueba, uno por rol (solo desarrollo)
     uv run python -m app.cli load-synthetic-curves      # curvas SINTÉTICAS (solo desarrollo)
     uv run python -m app.cli load-synthetic-measurements  # histórico SINTÉTICO hasta 2026-10-15
+    uv run python -m app.cli load-geometries            # polígonos OSM + área de influencia provisional
+    uv run python -m app.cli satellite --kind precipitacion --from 2005-01-01 --to 2026-11-10
 
 Las contraseñas generadas son temporales: se muestran una sola vez y deben cambiarse al entrar.
 """
@@ -192,6 +194,46 @@ def cmd_load_synthetic_measurements(args: argparse.Namespace) -> int:
     return 0 if not errors else 2
 
 
+def cmd_load_geometries(args: argparse.Namespace) -> int:
+    from app.services.geo import apply_osm_geometries
+
+    with _session() as s:
+        seed_reservoirs(s)
+        report = apply_osm_geometries(s, influence_km=args.influence_km, force=args.force)
+        log_action(
+            s,
+            "reservoir.geometry",
+            actor_email="cli",
+            entity="reservoir",
+            new={"fuente": "OSM", "area_influencia_km": args.influence_km},
+        )
+        s.commit()
+    print("\n".join(report))
+    return 0
+
+
+def cmd_satellite(args: argparse.Namespace) -> int:
+    """Descarga satelital desde la terminal (útil para el histórico, que tarda)."""
+    from app.services.satellite import ingest as sat_ingest
+
+    start, end = date.fromisoformat(args.date_from), date.fromisoformat(args.date_to)
+
+    def progress(fraction: float, message: str) -> None:
+        print(f"  [{fraction:6.1%}] {message}", flush=True)
+
+    with _session() as s:
+        codes = args.reservoirs or [c for (c,) in s.execute(select(Reservoir.code).order_by(Reservoir.code))]
+        try:
+            result = sat_ingest.run(s, args.kind, codes, start, end, progress)
+        except sat_ingest.MissingGeometryError as exc:
+            print(str(exc), "Ejecuta primero: python -m app.cli load-geometries", file=sys.stderr)
+            return 1
+        log_action(s, "satellite.cli", actor_email="cli", entity="satellite", new=result)
+        s.commit()
+    print(f"Listo: {result['guardadas']} observaciones guardadas ({result['con_valor']} con valor).")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     parser = argparse.ArgumentParser(
@@ -223,6 +265,18 @@ def main(argv: list[str] | None = None) -> int:
     )
     p.add_argument("--overwrite", action="store_true", help="Reemplazar días que ya existan")
     p.set_defaults(func=cmd_load_synthetic_measurements)
+
+    p = sub.add_parser("load-geometries", help="Cargar polígonos OSM y áreas de influencia provisionales")
+    p.add_argument("--influence-km", type=float, default=20.0)
+    p.add_argument("--force", action="store_true", help="Reemplazar también polígonos cargados por usuarios")
+    p.set_defaults(func=cmd_load_geometries)
+
+    p = sub.add_parser("satellite", help="Descargar datos satelitales")
+    p.add_argument("--kind", required=True, choices=["precipitacion", "humedad_suelo", "agua"])
+    p.add_argument("--from", dest="date_from", required=True)
+    p.add_argument("--to", dest="date_to", required=True)
+    p.add_argument("--reservoirs", nargs="*")
+    p.set_defaults(func=cmd_satellite)
 
     args = parser.parse_args(argv)
     return args.func(args)
