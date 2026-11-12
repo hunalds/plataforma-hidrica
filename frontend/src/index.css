@@ -1,0 +1,70 @@
+/* Fuentes servidas desde el propio sitio (sin Google Fonts: no disponible en Venezuela) */
+@import '@fontsource/lexend/500.css';
+@import '@fontsource/lexend/600.css';
+@import '@fontsource/source-sans-3/400.css';
+@import '@fontsource/source-sans-3/600.css';
+@import 'tailwindcss';
+
+/*
+ * Design tokens — ver docs/design-system.md
+ * Estilo: minimalista suizo, modo claro primero, alto contraste (WCAG AA).
+ * Los componentes usan SOLO estos tokens, nunca colores hex sueltos.
+ */
+@theme {
+  --font-heading: 'Lexend', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Source Sans 3', ui-sans-serif, system-ui, sans-serif;
+
+  /* Superficies y texto */
+  --color-background: #f8fafc;
+  --color-surface: #ffffff;
+  --color-foreground: #0f172a;
+  --color-muted: #e8ecf1;
+  --color-muted-foreground: #475569;
+  --color-border: #cbd5e1;
+
+  /* Marca: azul marino institucional + azul agua */
+  --color-primary: #0c4a6e;
+  --color-on-primary: #ffffff;
+  --color-accent: #0369a1;
+  --color-on-accent: #ffffff;
+  --color-ring: #0369a1;
+
+  /* Semáforo de embalses (texto/ícono sobre fondo claro ≥ 4.5:1) */
+  --color-status-normal: #15803d;
+  --color-status-normal-bg: #dcfce7;
+  --color-status-alert: #a16207;
+  --color-status-alert-bg: #fef9c3;
+  --color-status-critical: #b91c1c;
+  --color-status-critical-bg: #fee2e2;
+  --color-status-unknown: #475569;
+  --color-status-unknown-bg: #e2e8f0;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+  h1,
+  h2,
+  h3 {
+    @apply font-heading text-foreground;
+    text-wrap: balance;
+  }
+  :focus-visible {
+    outline: 3px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

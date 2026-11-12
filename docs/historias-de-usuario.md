@@ -36,7 +36,7 @@ Estados: ⬜ pendiente · 🔄 en curso · ✅ terminada
   - Si la base no responde, devuelve 503 con un mensaje controlado.
   - Alembic queda inicializado, con una migración que activa PostGIS.
 
-### HU-0.4 · Frontend base ⬜
+### HU-0.4 · Frontend base ✅
 - **Rol:** usuario
 - **Historia:** Como usuario, quiero un frontend en español que confirme la conexión con la API.
 - **Prioridad:** Alta · **Estimación:** 2
