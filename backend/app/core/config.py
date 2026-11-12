@@ -37,6 +37,9 @@ class Settings(BaseSettings):
     # Se escribe en .env como lista separada por comas: CORS_ORIGINS=http://a,http://b
     cors_origins: str = "http://localhost:5173"
 
+    # Fuente satelital activa (ver app/services/satellite/registry.py)
+    satellite_provider: str = "mock"
+
     @field_validator("log_level")
     @classmethod
     def _upper(cls, value: str) -> str:

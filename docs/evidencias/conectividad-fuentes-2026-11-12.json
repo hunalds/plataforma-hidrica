@@ -1,0 +1,105 @@
+{
+  "verificado": "2026-11-12T00:23:49",
+  "resultados": [
+    {
+      "key": "chirps_dynamical",
+      "name": "CHIRPS · catálogo dynamical.org (STAC)",
+      "use": "Precipitación diaria",
+      "needs_account": "No",
+      "reachable": true,
+      "http_status": 200,
+      "ms": 648.0,
+      "error": null
+    },
+    {
+      "key": "chirps_ucsb",
+      "name": "CHIRPS · servidor de la UCSB (CHC)",
+      "use": "Precipitación diaria (alternativa)",
+      "needs_account": "No",
+      "reachable": true,
+      "http_status": 200,
+      "ms": 374.0,
+      "error": null
+    },
+    {
+      "key": "cdse_stac",
+      "name": "Copernicus Data Space · STAC (Sentinel-2)",
+      "use": "NDWI / superficie de agua",
+      "needs_account": "Sí (para descargar)",
+      "reachable": true,
+      "http_status": 200,
+      "ms": 1219.0,
+      "error": null
+    },
+    {
+      "key": "planetary_computer",
+      "name": "Microsoft Planetary Computer · STAC",
+      "use": "NDWI (Sentinel-2 y Landsat)",
+      "needs_account": "No",
+      "reachable": true,
+      "http_status": 200,
+      "ms": 634.0,
+      "error": null
+    },
+    {
+      "key": "cds_era5_land",
+      "name": "Copernicus Climate Data Store (ERA5-Land)",
+      "use": "Humedad del suelo",
+      "needs_account": "Sí (gratuita)",
+      "reachable": true,
+      "http_status": 200,
+      "ms": 1078.0,
+      "error": null
+    },
+    {
+      "key": "nasa_cmr_smap",
+      "name": "NASA Earthdata CMR (SMAP)",
+      "use": "Humedad del suelo (complemento)",
+      "needs_account": "Sí (para descargar)",
+      "reachable": true,
+      "http_status": 200,
+      "ms": 566.0,
+      "error": null
+    },
+    {
+      "key": "arco_era5_gcs",
+      "name": "ARCO-ERA5 · Google Cloud Storage",
+      "use": "Humedad del suelo (servidor de Google)",
+      "needs_account": "No",
+      "reachable": true,
+      "http_status": 200,
+      "ms": 823.0,
+      "error": null
+    },
+    {
+      "key": "eox_s2cloudless",
+      "name": "EOX Sentinel-2 Cloudless (mapa base)",
+      "use": "Mapa base satelital",
+      "needs_account": "No",
+      "reachable": true,
+      "http_status": 200,
+      "ms": 1267.0,
+      "error": null
+    },
+    {
+      "key": "osm_tiles",
+      "name": "OpenStreetMap (mapa base)",
+      "use": "Mapa base de calles",
+      "needs_account": "No",
+      "reachable": true,
+      "http_status": 200,
+      "ms": 483.0,
+      "error": null
+    },
+    {
+      "key": "google_earth_engine",
+      "name": "Google Earth Engine (referencia)",
+      "use": "Opción descartada (C-10)",
+      "needs_account": "Sí",
+      "reachable": true,
+      "http_status": 200,
+      "ms": 550.0,
+      "error": null
+    }
+  ]
+}

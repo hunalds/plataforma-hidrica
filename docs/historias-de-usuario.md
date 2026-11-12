@@ -55,7 +55,7 @@ Estados: ⬜ pendiente · 🔄 en curso · ✅ terminada
   - Las cotas se mantienen dentro de los rangos de referencia, con algunos días de alivio.
   - El dataset está marcado como SINTÉTICO.
 
-### HU-0.6 · Prueba de fuentes satelitales ⬜
+### HU-0.6 · Prueba de fuentes satelitales ✅
 - **Rol:** ingeniero
 - **Historia:** Como ingeniero, quiero verificar que las fuentes satelitales funcionan desde Venezuela antes de construir la ingesta.
 - **Prioridad:** Alta · **Estimación:** 2

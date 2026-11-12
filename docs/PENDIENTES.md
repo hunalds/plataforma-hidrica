@@ -25,7 +25,7 @@ Cada valor de esta lista es **configurable** en el sistema. Mientras no se confi
 - [ ] **P-13** Balance diario = entradas − salidas − gasto ecológico − alivio, frente al cambio de volumen observado. Falta la tolerancia aceptada.
 
 ## Satélite
-- [ ] **P-14** Confirmar desde la red de MINAGUAS el acceso a CHIRPS, Copernicus y Planetary Computer.
+- [ ] **P-14** Confirmar desde la **red de MINAGUAS** el acceso a CHIRPS, Copernicus y Planetary Computer. Desde la red de los autores ya funcionan todas (ver `docs/evidencias/HU-0.6-fuentes-satelitales.md`).
 - [ ] **P-15** Producto de humedad del suelo: ERA5-Land (0,1°) o SMAP (9 km, desde 2015). Justificar la elección en la tesis.
 
 ## Institucional
