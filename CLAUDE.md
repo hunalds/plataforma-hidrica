@@ -68,4 +68,12 @@ scripts/   utilidades (base de datos, verificaciones)
   - El router `measurements` se registra ANTES que `reservoirs` (`/reservoirs/status` frente a `/reservoirs/{code}`).
   - Fórmulas M12 solo en `app/services/hydro_calcs.py`; reglas de calidad solo en `app/services/ingest.py::validate`.
   - El bundle del frontend pesa unos 520 kB: en la Iteración 5 se hará división por rutas (requisito de menos de 3 s).
-- **Siguiente:** Iteración 3 (M5 ingesta satelital con CHIRPS, ERA5-Land y NDWI), a la espera del plan y la aprobación.
+- **Iteración 3 (M5): ✅ cerrada el 2026-11-12.** Pruebas: 176 en el backend (+1 con red opcional), 12 en ml y 35 en el frontend.
+  - Geometrías: `app.cli load-geometries` (OSM provisional + área de influencia de 20 km). Copia en `backend/app/data/geo/embalses_osm.geojson`.
+  - Descargas: `app.cli satellite --kind precipitacion|humedad_suelo|agua --from AAAA-MM-DD --to AAAA-MM-DD`, o desde la pantalla "Datos satelitales".
+  - Cargado: CHIRPS y ERA5-Land 2005–2026; NDWI y superficie de agua desde 2025 (completar 2005–2024: P-31).
+  - Windows: el `PROJ_LIB` de PostGIS rompe rasterio; `water.configure_proj()` fuerza el PROJ incluido en rasterio.
+  - Open-Meteo limita el uso gratuito (429): se usa la media diaria y reintentos con espera.
+  - Pruebas con red: `RUN_NETWORK_TESTS=1 uv run pytest tests/test_satellite.py`.
+  - Heredocs muy largos en bash fallan en este entorno: para editar varios archivos, escribir un script .py en el scratchpad y ejecutarlo.
+- **Siguiente:** Iteración 4 (M6 Machine Learning: features, XGBoost, LSTM, backtesting y registro de modelos), a la espera del plan y la aprobación.

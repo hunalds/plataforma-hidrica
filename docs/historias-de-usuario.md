@@ -216,3 +216,61 @@ Estados: ⬜ pendiente · 🔄 en curso · ✅ terminada
   - Ficha con estado actual, tabla del movimiento diario (7 días a 1 año) y balance.
   - Pantallas "Registro diario" e "Importar datos".
   - Ayudas en lenguaje sencillo en cada indicador.
+
+---
+
+## Iteración 3 — Datos satelitales (M5)
+
+### HU-3.1 · Polígonos de los embalses y áreas de influencia ✅
+- **Rol:** Ingeniero · **Prioridad:** Alta · **Estimación:** 2
+- **Historia:** Como Ingeniero, quiero los polígonos de cada embalse y de su zona de aporte para agregar los datos satelitales sobre el área correcta.
+- **Criterios de aceptación:**
+  - Polígonos reales de los espejos de agua tomados de OpenStreetMap (ODbL), con copia versionada y marcados como PROVISIONALES.
+  - Área de influencia provisional (espejo + 20 km) mientras no estén las cuencas oficiales.
+  - Cada geometría guarda su origen. Los polígonos cargados por un usuario no se reemplazan.
+
+### HU-3.2 · Precipitación diaria por cuenca (CHIRPS) ✅
+- **Rol:** Ingeniero · **Prioridad:** Alta · **Estimación:** 2
+- **Historia:** Como Ingeniero, quiero la lluvia diaria sobre la zona de aporte de cada embalse desde 2005, sin depender de una cuenta.
+- **Criterios de aceptación:**
+  - CHIRPS v3 desde dynamical.org: producto final y preliminar, promedio por polígono a 0,05°.
+  - Histórico completo 2005–2026 cargado: 23.937 días.
+
+### HU-3.3 · Humedad del suelo (ERA5-Land) ✅
+- **Rol:** Ingeniero · **Prioridad:** Alta · **Estimación:** 2
+- **Historia:** Como Ingeniero, quiero la humedad del suelo diaria de la zona de aporte, porque condiciona cuánto de la lluvia llega al embalse.
+- **Criterios de aceptación:**
+  - ERA5-Land (capa 0–7 cm) vía Open-Meteo, sin cuenta, promediando una malla de puntos dentro del área de influencia.
+  - Reintentos ante el límite de uso (429).
+
+### HU-3.4 · NDWI y superficie del espejo de agua ✅
+- **Rol:** Ingeniero · **Prioridad:** Alta · **Estimación:** 3
+- **Historia:** Como Ingeniero, quiero medir desde el satélite la superficie de agua de cada embalse para contrastarla con la cota medida.
+- **Criterios de aceptación:**
+  - Sentinel-2 L2A y Landsat C2 L2 desde Planetary Computer; NDWI de McFeeters.
+  - Se usa la escena con menos nubes de cada fecha y se reportan el porcentaje de nubes y la calidad (buena, dudosa o sin dato).
+  - Se corrigen el desplazamiento de Sentinel-2 y la escala de Landsat.
+
+### HU-3.5 · Ingesta y tareas en segundo plano ✅
+- **Rol:** Ingeniero · **Prioridad:** Alta · **Estimación:** 2
+- **Historia:** Como Ingeniero, quiero lanzar descargas largas sin bloquear la plataforma y ver su avance.
+- **Criterios de aceptación:**
+  - Las tareas registran estado, avance, resultado o error.
+  - Guardado por bloques e idempotente.
+  - No se permiten dos descargas del mismo tipo a la vez.
+  - CLI para el histórico.
+
+### HU-3.6 · API de series e indicadores satelitales ✅
+- **Rol:** todos · **Prioridad:** Alta · **Estimación:** 2
+- **Historia:** Como usuario, quiero ver la lluvia reciente frente a lo normal, la humedad del suelo y el último espejo de agua de cada embalse.
+- **Criterios de aceptación:**
+  - Resumen con lluvia de 7 y 30 días y su anomalía, humedad del suelo frente a su normal mensual, y superficie de agua frente al polígono.
+  - Serie por variable con filtro de calidad.
+  - Permisos: M5 para descargas y M7 (todos) para consultar.
+
+### HU-3.7 · Interfaz satelital ✅
+- **Rol:** todos · **Prioridad:** Alta · **Estimación:** 2
+- **Historia:** Como usuario, quiero ver los indicadores satelitales en la ficha del embalse y, como Ingeniero, gestionar las descargas.
+- **Criterios de aceptación:**
+  - Tarjeta de indicadores con ayudas y aviso de geometría provisional.
+  - Pantalla "Datos satelitales" con avance en vivo, cobertura y fuentes.

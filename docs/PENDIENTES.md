@@ -14,8 +14,8 @@ Cada valor de esta lista es **configurable** en el sistema. Mientras no se confi
 - [ ] **P-21** Parámetros sintéticos de `ml/config/embalses.json` (volumen al nivel normal, cota de fondo, caudales medios): se deben reemplazar por los valores oficiales.
 
 ## Geometrías
-- [ ] **P-07** Polígonos (GeoJSON) del espejo de agua de cada embalse.
-- [ ] **P-08** Polígonos de las cuencas aportantes, para la precipitación y la humedad del suelo.
+- [ ] **P-07** Polígonos oficiales (GeoJSON) del espejo de agua de cada embalse. *Provisional: OpenStreetMap (ODbL), cargados el 2026-11-12.*
+- [ ] **P-08** Polígonos de las cuencas aportantes, para la precipitación y la humedad del suelo. *Provisional: área de influencia de 20 km alrededor del embalse.*
 
 ## Fórmulas del balance hídrico (M12), por validar
 - [ ] **P-09** Volumen útil = volumen actual − volumen muerto.
@@ -37,6 +37,12 @@ Cada valor de esta lista es **configurable** en el sistema. Mientras no se confi
 - [ ] **P-22** Dónde guardar el token de renovación en el navegador. Hoy está en `localStorage`; en producción conviene una cookie `httpOnly`, pero hay que confirmar los dominios del frontend y del backend (Iteración 7).
 - [ ] **P-23** Política de contraseñas y parámetros de bloqueo (10 caracteres, 5 intentos, 15 min, sesión inactiva 30 min). Revisar si las normativas institucionales piden otros valores.
 - [ ] **P-24** Proveedor SMTP oficial para el envío de correos (recuperación y alertas).
+
+## Satélite (Iteración 3)
+- [ ] **P-28** Licencia de Open-Meteo para uso institucional permanente. Es gratuito para uso no comercial (tesis). En producción hay que confirmar con MINAGUAS o pasar al Copernicus CDS con cuenta propia.
+- [ ] **P-29** Calidad del NDWI: la nubosidad tropical deja muchos días sin dato y Landsat 7 tiene franjas sin dato desde 2003 (SLC-off). Validar el umbral de NDWI (0) y el margen de 300 m con los técnicos.
+- [ ] **P-30** Radio del área de influencia (20 km) mientras no estén las cuencas oficiales.
+- [ ] **P-31** Histórico de NDWI y superficie de agua cargado desde 2025-01-01 (tarda ~1,5 min por embalse y mes). Completar 2005–2024 con la CLI antes del entrenamiento final de la Iteración 4.
 
 ## Institucional
 - [ ] **P-16** Normativas institucionales sobre el almacenamiento de datos: dónde deben residir los datos y por cuánto tiempo se retienen.

@@ -1,6 +1,6 @@
 # Arquitectura
 
-Documento vivo: se actualiza al cerrar cada iteración. **Estado: cierre de la Iteración 2 (2026-11-12).** Los bloques marcados *(previsto)* todavía no existen.
+Documento vivo: se actualiza al cerrar cada iteración. **Estado: cierre de la Iteración 3 (2026-11-12).** Los bloques marcados *(previsto)* todavía no existen.
 
 ## 1. Arquitectura lógica (componentes)
 
@@ -19,10 +19,10 @@ flowchart LR
     end
 
     subgraph Backend["Backend · FastAPI (Python 3.12)"]
-        API[Routers<br/>/health · /auth · /users · /audit · /reservoirs ✅<br/>/ingest · /measurements · /status · /balance ✅<br/>predicciones · alertas · reportes <i>(previsto)</i>]
+        API[Routers<br/>/health · /auth · /users · /audit · /reservoirs ✅<br/>/ingest · /measurements · /status · /balance ✅<br/>/satellite · /satellite/jobs ✅<br/>predicciones · alertas · reportes <i>(previsto)</i>]
         SVC[Servicios<br/>auditoría · sesiones · correo · curvas ✅<br/>hydro_calcs · ingest · tabular ✅<br/>alertas · reportes <i>(previsto)</i>]
-        SAT[SatelliteProvider ✅<br/>mock · chirps · era5_land · copernicus · planetary_computer]
-        JOBS[Tareas manuales<br/>BackgroundTasks <i>(previsto)</i>]
+        SAT[SatelliteProvider ✅<br/>chirps · era5_land_openmeteo · planetary_computer · mock]
+        JOBS[Tareas manuales ✅<br/>BackgroundTasks + tabla jobs]
     end
 
     subgraph ML["ML · ml/ (Python 3.12)"]
@@ -34,7 +34,8 @@ flowchart LR
 
     subgraph Externos["Fuentes externas (verificadas en HU-0.6)"]
         CH[CHIRPS<br/>dynamical.org]
-        E5[ERA5-Land<br/>Copernicus CDS]
+        E5[ERA5-Land<br/>vía Open-Meteo]
+        OSM[Polígonos<br/>OpenStreetMap]
         S2[Sentinel-2 / Landsat<br/>Planetary Computer · CDSE]
     end
 
@@ -45,6 +46,7 @@ flowchart LR
     API --> JOBS --> SAT
     JOBS --> FEAT
     SAT --> CH & E5 & S2
+    SVC -. copia versionada .-> OSM
     SAT --> DB
     FEAT --> DB
     SYN -. datos de desarrollo .-> DB
@@ -104,6 +106,8 @@ erDiagram
     RESERVOIRS ||--o{ DAILY_MEASUREMENTS : "movimiento diario"
     IMPORT_BATCHES ||--o{ DAILY_MEASUREMENTS : "origen"
     USERS ||--o{ IMPORT_BATCHES : carga
+    RESERVOIRS ||--o{ SATELLITE_OBSERVATIONS : "observaciones"
+    USERS ||--o{ JOBS : lanza
 
     USERS {
         int id PK
@@ -189,6 +193,27 @@ erDiagram
         jsonb rows "filas válidas hasta confirmar"
         int created_by FK
     }
+    SATELLITE_OBSERVATIONS {
+        int id PK
+        string reservoir_code FK
+        enum scope "EMBALSE | CUENCA"
+        date day
+        string variable "precipitacion_mm | humedad_suelo_m3m3 | ndwi_medio | superficie_agua_km2"
+        float value
+        string source
+        string quality "buena | dudosa | sin_dato"
+        float cloud_pct
+        jsonb meta
+    }
+    JOBS {
+        uuid id PK
+        string kind
+        jsonb params
+        enum status "PENDIENTE | EN_CURSO | TERMINADA | FALLIDA"
+        float progress
+        string message
+        jsonb result
+    }
     AUDIT_LOG {
         int id PK
         timestamptz created_at
@@ -202,7 +227,7 @@ erDiagram
     }
 ```
 
-Previstas para las próximas iteraciones: `OBSERVACION_SATELITAL` (M5), `MODELO_ML` y `PREDICCION` (M6), `ALERTA` (M9).
+Previstas para las próximas iteraciones: `MODELO_ML` y `PREDICCION` (M6), `ALERTA` (M9).
 
 ## 4. Casos de uso (Iteración 1)
 
@@ -277,7 +302,31 @@ sequenceDiagram
     A-->>F: insertadas / actualizadas / omitidas
 ```
 
-## 7. Decisiones de arquitectura
+## 7. Secuencia: descarga satelital en segundo plano (Iteración 3)
+
+```mermaid
+sequenceDiagram
+    actor I as Ingeniero
+    participant F as Frontend
+    participant A as API /satellite
+    participant B as BackgroundTasks
+    participant P as Proveedor (CHIRPS / Open-Meteo / Planetary Computer)
+    participant D as PostgreSQL
+    I->>F: tipo de dato + rango de fechas
+    F->>A: POST /satellite/jobs
+    A->>D: validar geometrías · crear Job (PENDIENTE) · bitácora
+    A-->>F: 202 + id de la tarea
+    A->>B: agendar run_job
+    loop por bloque (año o trimestre) y embalse
+        B->>P: descargar / recortar al polígono
+        P-->>B: observaciones diarias (+ nubes y calidad)
+        B->>D: upsert observaciones · commit · avance del Job
+    end
+    B->>D: Job TERMINADA (o FALLIDA con el mensaje)
+    F->>A: GET /satellite/jobs (cada 3 s mientras haya tareas en curso)
+```
+
+## 8. Decisiones de arquitectura
 
 | Decisión | Razón |
 |---|---|
@@ -294,4 +343,7 @@ sequenceDiagram
 | Un solo validador para importación, registro manual, corrección y carga sintética | Las reglas de calidad son idénticas en todos los caminos de entrada y se prueban una sola vez. |
 | Vista previa persistida (`import_batches`) | El archivo se valida una vez; al confirmar se guarda exactamente lo que el usuario revisó. |
 | Indicadores M12 calculados al consultar (no guardados) | Si cambia la curva o se corrige una fórmula, todo el histórico se recalcula sin migrar datos. |
+| Proveedores satelitales detrás de `SatelliteProvider`; cálculos en `compute.py` (sin red) | Cambiar de fuente (p. ej. al CDS con cuenta) no toca la ingesta ni la API, y los cálculos se prueban con arreglos sintéticos. |
+| Copia versionada de los polígonos OSM (`app/data/geo`) | El sistema no depende de que OSM o Nominatim estén disponibles, y la geometría usada queda trazable. |
+| Tareas con `BackgroundTasks` + tabla `jobs` | Descargas de minutos u horas sin bloquear la API, con avance visible y sin instalar Redis ni Celery. |
 | Fórmulas en funciones puras (`hydro_calcs.py`) | Se auditan y prueban sin base de datos. Es el único lugar que hay que cambiar cuando MINAGUAS valide las fórmulas. |
