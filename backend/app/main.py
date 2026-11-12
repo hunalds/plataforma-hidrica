@@ -15,10 +15,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import sessionmaker
 
 from app import __version__
-from app.api import health
+from app.api import audit, auth, health, reservoirs, users
 from app.core.config import Settings, get_settings
 from app.core.logging import configure_logging, get_logger
+from app.core.rate_limit import SlidingWindowLimiter
 from app.db import build_engine
+from app.services.email import build_email_sender
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -44,6 +46,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.settings = settings
     app.state.engine = build_engine(settings)
     app.state.session_factory = sessionmaker(app.state.engine, expire_on_commit=False)
+    app.state.login_limiter = SlidingWindowLimiter(settings.login_rate_limit_per_minute, 60)
+    app.state.email_sender = build_email_sender(settings)
 
     app.add_middleware(
         CORSMiddleware,
@@ -67,6 +71,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return response
 
     app.include_router(health.router)
+    app.include_router(auth.router)
+    app.include_router(users.router)
+    app.include_router(audit.router)
+    app.include_router(reservoirs.router)
     return app
 
 
