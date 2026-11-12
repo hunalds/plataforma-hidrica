@@ -238,10 +238,13 @@ def set_geometry(
         )
 
     value = func.ST_Multi(func.ST_SetSRID(func.ST_GeomFromGeoJSON(gj), 4326))
+    origin = f"Cargado por {user.email} el {date.today().isoformat()}"
     if body.kind == "reservoir":
         r.geom = value
+        r.geom_source = origin
     else:
         r.basin_geom = value
+        r.basin_source = origin
     log_action(
         session,
         "reservoir.geometry",

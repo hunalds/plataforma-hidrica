@@ -26,6 +26,9 @@ class Reservoir(Base):
     # Geometrías WGS84 cargadas por los autores (P-07, P-08). Nunca se inventan.
     geom: Mapped[object | None] = mapped_column(Geometry("MULTIPOLYGON", srid=4326, spatial_index=True))
     basin_geom: Mapped[object | None] = mapped_column(Geometry("MULTIPOLYGON", srid=4326, spatial_index=True))
+    # Origen de cada geometría (p. ej. "OpenStreetMap (ODbL) 2026-11-12" o "MINAGUAS oficial")
+    geom_source: Mapped[str | None] = mapped_column(String(200))
+    basin_source: Mapped[str | None] = mapped_column(String(200))
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
