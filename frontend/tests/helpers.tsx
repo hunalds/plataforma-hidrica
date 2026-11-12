@@ -4,7 +4,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router'
 import { vi } from 'vitest'
 
 import { tokens } from '../src/api/client'
-import type { Me, Reservoir, ReservoirStatus, Role } from '../src/api/types'
+import type { Me, Reservoir, ReservoirStatus, Role, SatelliteSummary } from '../src/api/types'
 import { AuthProvider } from '../src/auth/AuthContext'
 import { routes } from '../src/router'
 
@@ -12,8 +12,8 @@ type Handler = (body: unknown, url: URL) => { status?: number; body: unknown }
 export type Routes = Record<string, Handler | unknown>
 
 const PERMISSIONS: Record<Role, Me['permissions']> = {
-  GERENCIA: { M1_auditoria: 'READ', M2_usuarios: 'MANAGE', M3_embalses: 'READ', M4_ingesta: 'READ', M7_panel: 'READ', M11_ayuda: 'READ', M12_calculos: 'READ' },
-  INGENIERO: { M3_embalses: 'MANAGE', M4_ingesta: 'MANAGE', M7_panel: 'READ', M11_ayuda: 'READ', M12_calculos: 'MANAGE' },
+  GERENCIA: { M1_auditoria: 'READ', M2_usuarios: 'MANAGE', M3_embalses: 'READ', M4_ingesta: 'READ', M5_satelite: 'READ', M7_panel: 'READ', M11_ayuda: 'READ', M12_calculos: 'READ' },
+  INGENIERO: { M3_embalses: 'MANAGE', M4_ingesta: 'MANAGE', M5_satelite: 'MANAGE', M7_panel: 'READ', M11_ayuda: 'READ', M12_calculos: 'MANAGE' },
   OPERADOR: { M3_embalses: 'READ', M4_ingesta: 'MANAGE', M7_panel: 'READ', M11_ayuda: 'READ', M12_calculos: 'READ' },
 }
 
@@ -79,6 +79,25 @@ export const tuleStatus: ReservoirStatus = {
   missing_curve: false,
 }
 
+export const tuleSatellite: SatelliteSummary = {
+  reservoir_code: 'TULE',
+  precipitation_7d_mm: 42.3,
+  precipitation_30d_mm: 180.4,
+  precipitation_30d_normal_mm: 210.0,
+  precipitation_30d_anomaly_pct: -14,
+  precipitation_last_day: '2026-11-05',
+  soil_moisture: 0.302,
+  soil_moisture_day: '2026-11-10',
+  soil_moisture_normal: 0.315,
+  water_area_km2: 23.7,
+  water_area_day: '2026-10-29',
+  water_area_source: 'sentinel-2-l2a',
+  water_area_reference_km2: 32.8,
+  ndwi: 0.21,
+  geometry_source: 'OpenStreetMap (ODbL) · PROVISIONAL',
+  basin_source: 'Área de influencia PROVISIONAL: espejo OSM + 20 km',
+}
+
 export function tokenResponse(user: Me) {
   return { access_token: 'acceso', refresh_token: 'renovar', token_type: 'bearer', expires_in: 900, user }
 }
@@ -110,6 +129,7 @@ export function renderApp(path: string, routesMock: Routes = {}, as?: Me) {
     'GET /reservoirs/status': [],
     'GET /reservoirs/TULE/status': tuleStatus,
     'GET /reservoirs/TULE/measurements': [],
+    'GET /reservoirs/TULE/satellite/summary': tuleSatellite,
     'GET /reservoirs/TULE/balance': { reservoir_code: 'TULE', date_from: '2026-10-01', date_to: '2026-10-31', days: [], totals: {}, note: '' },
     ...routesMock,
   }

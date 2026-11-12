@@ -1,4 +1,4 @@
-import { ClipboardText, Drop, FileArrowUp, Gauge, List, NotePencil, SignOut, UserCircle, Users, Waves, X } from '@phosphor-icons/react'
+import { ClipboardText, Drop, FileArrowUp, Gauge, GlobeHemisphereWest, List, NotePencil, SignOut, UserCircle, Users, Waves, X } from '@phosphor-icons/react'
 import { useEffect, useState, type ComponentType } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router'
 
@@ -20,6 +20,7 @@ const NAV: NavItem[] = [
   { to: '/', label: es.nav.reservoirs, icon: Waves, module: MODULES.reservoirs },
   { to: '/registro', label: es.nav.dailyEntry, icon: NotePencil, module: MODULES.ingest, level: 'MANAGE' },
   { to: '/importar', label: es.nav.import, icon: FileArrowUp, module: MODULES.ingest, level: 'MANAGE', hideFor: ['OPERADOR'] },
+  { to: '/satelite', label: es.nav.satellite, icon: GlobeHemisphereWest, module: MODULES.satellite },
   { to: '/usuarios', label: es.nav.users, icon: Users, module: MODULES.users },
   { to: '/auditoria', label: es.nav.audit, icon: ClipboardText, module: MODULES.audit },
   { to: '/estado', label: es.nav.status, icon: Gauge },

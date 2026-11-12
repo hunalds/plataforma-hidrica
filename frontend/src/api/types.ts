@@ -202,3 +202,59 @@ export interface Balance {
   totals: Record<string, number | null>
   note: string
 }
+
+// --- Iteración 3: datos satelitales ---
+
+export interface SatelliteSummary {
+  reservoir_code: string
+  precipitation_7d_mm: number | null
+  precipitation_30d_mm: number | null
+  precipitation_30d_normal_mm: number | null
+  precipitation_30d_anomaly_pct: number | null
+  precipitation_last_day: string | null
+  soil_moisture: number | null
+  soil_moisture_day: string | null
+  soil_moisture_normal: number | null
+  water_area_km2: number | null
+  water_area_day: string | null
+  water_area_source: string | null
+  water_area_reference_km2: number | null
+  ndwi: number | null
+  geometry_source: string | null
+  basin_source: string | null
+}
+
+export type JobStatus = 'PENDIENTE' | 'EN_CURSO' | 'TERMINADA' | 'FALLIDA'
+
+export interface Job {
+  id: string
+  kind: string
+  params: { tipo: string; embalses: string[]; desde: string; hasta: string }
+  status: JobStatus
+  progress: number
+  message: string | null
+  result: { guardadas: number; con_valor: number } | null
+  created_at: string
+  started_at: string | null
+  finished_at: string | null
+}
+
+export interface Coverage {
+  reservoir_code: string
+  variable: string
+  source: string
+  observations: number
+  with_value: number
+  good: number
+  first_day: string | null
+  last_day: string | null
+}
+
+export interface SatelliteSource {
+  clave: string
+  nombre: string
+  variables: string[]
+  acceso: string
+  resolucion: string
+  atribucion: string
+}

@@ -13,8 +13,8 @@ function navLinks() {
 
 describe('Navegación y permisos por rol (HU-1.8)', () => {
   it.each([
-    ['GERENCIA', ['Embalses', 'Usuarios', 'Bitácora', 'Estado del sistema']],
-    ['INGENIERO', ['Embalses', 'Registro diario', 'Importar datos', 'Estado del sistema']],
+    ['GERENCIA', ['Embalses', 'Datos satelitales', 'Usuarios', 'Bitácora', 'Estado del sistema']],
+    ['INGENIERO', ['Embalses', 'Registro diario', 'Importar datos', 'Datos satelitales', 'Estado del sistema']],
     ['OPERADOR', ['Embalses', 'Registro diario', 'Estado del sistema']],
   ] as const)('el menú de %s muestra solo sus módulos', async (role, expected) => {
     renderApp('/', { 'GET /reservoirs': [tule] }, makeMe(role))
