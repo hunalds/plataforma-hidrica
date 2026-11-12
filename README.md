@@ -13,6 +13,7 @@ Iteraciones 0 a 8 cerradas: los módulos M1–M12 están implementados y probado
 ![Panel principal](docs/capturas/m7-panel-principal.png)
 
 ## Documentación
+- [docs/INSTALACION.md](docs/INSTALACION.md): **qué instalar y cómo poner en marcha el proyecto en una PC nueva**
 - [docs/manual-usuario.md](docs/manual-usuario.md): manual de usuario por rol, con capturas
 - [docs/manual-tecnico.md](docs/manual-tecnico.md): instalación, despliegue (Docker, Vercel), respaldo, CLI y variables
 - [docs/arquitectura.md](docs/arquitectura.md) · [docs/historias-de-usuario.md](docs/historias-de-usuario.md) · [docs/diccionario-datos.md](docs/diccionario-datos.md) · [docs/api/endpoints.md](docs/api/endpoints.md)
@@ -23,8 +24,10 @@ Iteraciones 0 a 8 cerradas: los módulos M1–M12 están implementados y probado
 - [docs/herramientas-ia.md](docs/herramientas-ia.md): herramientas de IA usadas en el desarrollo
 
 ## Requisitos de desarrollo
+Detalle completo, versiones y solución de problemas en [docs/INSTALACION.md](docs/INSTALACION.md).
+
 - Python 3.12 (gestionado con [uv](https://docs.astral.sh/uv/))
-- Node.js 22+
+- Node.js 22+ (desarrollado con Node 24)
 - PostgreSQL 18 + PostGIS
 
 ## Puesta en marcha (desarrollo local)
