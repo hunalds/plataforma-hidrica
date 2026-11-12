@@ -64,7 +64,7 @@ Estados: ⬜ pendiente · 🔄 en curso · ✅ terminada
   - Descarga real de un mes de CHIRPS y de humedad del suelo, recortada al estado Zulia.
   - Informe de la conectividad de cada fuente.
 
-### HU-0.7 · Calidad local ⬜
+### HU-0.7 · Calidad local ✅
 - **Rol:** equipo de desarrollo
 - **Historia:** Como equipo, quiero un script único de verificación para detectar errores antes de cada commit.
 - **Prioridad:** Media · **Estimación:** 1

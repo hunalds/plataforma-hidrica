@@ -1,4 +1,4 @@
-# Crea el usuario y las bases de la Plataforma Hídrica y activa PostGIS.
+﻿# Crea el usuario y las bases de la Plataforma Hídrica y activa PostGIS.
 # Uso (desde la raíz del proyecto):
 #   powershell -ExecutionPolicy Bypass -File scripts\db\setup_db.ps1
 # Te pedirá la contraseña del superusuario "postgres". No se guarda en ningún lado.

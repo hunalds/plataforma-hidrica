@@ -1,0 +1,70 @@
+# Integración continua — PREPARADA PERO INACTIVA (ver docs/CAMBIOS-PROMPT.md, C-07).
+# Mientras el repositorio no esté en GitHub solo se ejecuta a mano (workflow_dispatch).
+# Para activarla al subir el repositorio, descomenta "push" y "pull_request".
+name: CI
+
+on:
+  workflow_dispatch:
+  # push:
+  #   branches: [main]
+  # pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgis/postgis:18-3.6
+        env:
+          POSTGRES_USER: hidrica_app
+          POSTGRES_PASSWORD: ci-password
+          POSTGRES_DB: plataforma_hidrica_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U hidrica_app" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      APP_ENV: test
+      DB_HOST: localhost
+      DB_USER: hidrica_app
+      DB_PASSWORD: ci-password
+      DB_NAME_TEST: plataforma_hidrica_test
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --locked
+      - run: uv run ruff check . ../scripts && uv run ruff format --check . ../scripts
+      - run: uv run alembic upgrade head
+      - run: uv run pytest
+
+  ml:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ml
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --locked
+      - run: uv run ruff check . && uv run ruff format --check .
+      - run: uv run pytest
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npx eslint .
+      - run: npx tsc -b --noEmit
+      - run: npx vitest run
+      - run: npm run build
