@@ -21,6 +21,8 @@ class Reservoir(Base):
     normal_level: Mapped[float] = mapped_column(Float)  # cota normal (m.s.n.m., P-01)
     dead_level: Mapped[float] = mapped_column(Float)  # cota de volumen muerto / mínimo operativo
     description: Mapped[str | None] = mapped_column(Text)
+    # Control de calidad (M4): variación diaria de cota que se considera "salto brusco"
+    qc_max_daily_change_m: Mapped[float] = mapped_column(Float, default=1.0, server_default="1.0")
     # Geometrías WGS84 cargadas por los autores (P-07, P-08). Nunca se inventan.
     geom: Mapped[object | None] = mapped_column(Geometry("MULTIPOLYGON", srid=4326, spatial_index=True))
     basin_geom: Mapped[object | None] = mapped_column(Geometry("MULTIPOLYGON", srid=4326, spatial_index=True))

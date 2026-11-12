@@ -71,6 +71,7 @@ class ReservoirOut(BaseModel):
     records_start: date | None
     normal_level: float
     dead_level: float
+    qc_max_daily_change_m: float = Field(description="Variación diaria de cota considerada salto brusco (m)")
     has_geometry: bool
     has_basin_geometry: bool
     thresholds: ThresholdsOut
@@ -87,6 +88,7 @@ class ReservoirUpdate(BaseModel):
     records_start: date | None = None
     normal_level: float | None = None
     dead_level: float | None = None
+    qc_max_daily_change_m: float | None = Field(default=None, gt=0, le=20)
 
 
 class GeometryIn(BaseModel):
