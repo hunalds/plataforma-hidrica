@@ -68,6 +68,6 @@ describe('Pantalla de datos satelitales (HU-3.7)', () => {
 
   it('el Operador no tiene acceso al módulo', async () => {
     renderApp('/satelite', { ...base, 'GET /satellite/jobs': [] }, makeMe('OPERADOR'))
-    expect(await screen.findByRole('heading', { name: 'Embalses' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Panel principal' })).toBeInTheDocument()
   })
 })

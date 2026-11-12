@@ -12,9 +12,9 @@ type Handler = (body: unknown, url: URL) => { status?: number; body: unknown }
 export type Routes = Record<string, Handler | unknown>
 
 const PERMISSIONS: Record<Role, Me['permissions']> = {
-  GERENCIA: { M1_auditoria: 'READ', M2_usuarios: 'MANAGE', M3_embalses: 'READ', M4_ingesta: 'READ', M5_satelite: 'READ', M6_prediccion: 'READ', M7_panel: 'READ', M11_ayuda: 'READ', M12_calculos: 'READ' },
-  INGENIERO: { M3_embalses: 'MANAGE', M4_ingesta: 'MANAGE', M5_satelite: 'MANAGE', M6_prediccion: 'MANAGE', M7_panel: 'READ', M11_ayuda: 'READ', M12_calculos: 'MANAGE' },
-  OPERADOR: { M3_embalses: 'READ', M4_ingesta: 'MANAGE', M7_panel: 'READ', M11_ayuda: 'READ', M12_calculos: 'READ' },
+  GERENCIA: { M1_auditoria: 'READ', M2_usuarios: 'MANAGE', M3_embalses: 'READ', M4_ingesta: 'READ', M8_mapa: 'READ', M9_alertas: 'READ', M5_satelite: 'READ', M6_prediccion: 'READ', M7_panel: 'READ', M11_ayuda: 'READ', M12_calculos: 'READ' },
+  INGENIERO: { M3_embalses: 'MANAGE', M4_ingesta: 'MANAGE', M8_mapa: 'READ', M9_alertas: 'MANAGE', M5_satelite: 'MANAGE', M6_prediccion: 'MANAGE', M7_panel: 'READ', M11_ayuda: 'READ', M12_calculos: 'MANAGE' },
+  OPERADOR: { M3_embalses: 'READ', M4_ingesta: 'MANAGE', M8_mapa: 'READ', M9_alertas: 'READ', M7_panel: 'READ', M11_ayuda: 'READ', M12_calculos: 'READ' },
 }
 
 export function makeMe(role: Role, extra: Partial<Me> = {}): Me {
@@ -127,6 +127,10 @@ export function renderApp(path: string, routesMock: Routes = {}, as?: Me) {
   // Respuestas por defecto de los endpoints que consultan casi todas las pantallas
   const fullRoutes: Routes = {
     'GET /reservoirs/status': [],
+    'GET /map/features': { reservoirs: { type: 'FeatureCollection', features: [] }, basins: { type: 'FeatureCollection', features: [] }, satellite_source: 'real', attribution: 'OSM' },
+    'GET /dashboard/comparison': [],
+    'GET /alerts': [],
+    'GET /reservoirs/TULE/history': { reservoir_code: 'TULE', years: '2005–2025', points: [] },
     'GET /reservoirs/TULE/status': tuleStatus,
     'GET /reservoirs/TULE/measurements': [],
     'GET /reservoirs/TULE/satellite/summary': tuleSatellite,

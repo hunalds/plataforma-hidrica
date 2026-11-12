@@ -332,3 +332,70 @@ export const MODEL_LABELS: Record<string, string> = {
   xgboost: 'XGBoost',
   lstm: 'LSTM (red neuronal)',
 }
+
+// --- Iteración 5: panel y mapa ---
+
+export interface MapReservoirProps {
+  code: string
+  name: string
+  light: Light
+  direction: Direction
+  light_reason: string
+  level_m: number | null
+  availability_pct: number | null
+  reserve_days: number | null
+  last_day: string | null
+  is_stale: boolean
+  precip_30d_mm: number | null
+  soil_moisture: number | null
+  soil_moisture_day: string | null
+  water_area_km2: number | null
+  water_area_day: string | null
+  geometry_source: string | null
+}
+
+export interface MapFeatures {
+  reservoirs: GeoJSON.FeatureCollection<GeoJSON.Geometry, MapReservoirProps>
+  basins: GeoJSON.FeatureCollection<GeoJSON.Geometry, { code: string; name: string; precip_30d_mm: number | null; soil_moisture: number | null; source: string | null }>
+  satellite_source: string
+  attribution: string
+}
+
+export interface HistoryResponse {
+  reservoir_code: string
+  years: string
+  points: { day: string; level_m: number | null; hist_min: number | null; hist_max: number | null; hist_mean: number | null }[]
+}
+
+export interface ComparisonSeries {
+  reservoir_code: string
+  name: string
+  availability: [string, number][]
+}
+
+// --- Iteración 6: alertas ---
+
+export type Severity = 'informativa' | 'alerta' | 'critica'
+
+export interface AlertItem {
+  id: number
+  reservoir_code: string
+  reservoir_name: string
+  kind: 'observada' | 'proyectada'
+  direction: 'escasez' | 'inundacion_alivio'
+  severity: Severity
+  threshold: string
+  threshold_level: number
+  title: string
+  message: string
+  value: number | null
+  horizon_days: number | null
+  probability: number | null
+  event_day: string
+  created_at: string
+  updated_at: string
+  resolved_at: string | null
+  acknowledged_by_me: boolean
+  acknowledgements: { user: string; at: string }[]
+  deliveries: { channel: string; status: string; to: string; at: string }[]
+}

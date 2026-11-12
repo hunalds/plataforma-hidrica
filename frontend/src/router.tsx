@@ -1,24 +1,37 @@
+import { lazy, Suspense, type ReactNode } from 'react'
 import type { RouteObject } from 'react-router'
 
 import { MODULES } from './api/types'
 import { AnonymousOnly, RequireAuth, RequireImporter, RequirePermission } from './auth/guards'
 import { AppShell, AuthLayout } from './components/AppShell'
-import { AuditPage } from './pages/admin/AuditPage'
-import { UsersPage } from './pages/admin/UsersPage'
+import { Spinner } from './components/ui'
 import { LoginPage } from './pages/auth/LoginPage'
 import { ChangePasswordPage, ForgotPasswordPage, ResetPasswordPage } from './pages/auth/PasswordPages'
-import { DailyEntryPage } from './pages/ingest/DailyEntryPage'
-import { ImportPage } from './pages/ingest/ImportPage'
+import { ErrorPage } from './pages/ErrorPage'
 import { NotFoundPage } from './pages/NotFoundPage'
-import { ReservoirDetailPage } from './pages/reservoirs/ReservoirDetailPage'
-import { ReservoirsPage } from './pages/reservoirs/ReservoirsPage'
-import { ModelsPage } from './pages/ml/ModelsPage'
-import { SatellitePage } from './pages/satellite/SatellitePage'
-import { StatusPage } from './pages/StatusPage'
+
+// Cada pantalla se descarga solo cuando se visita (requisito: panel en menos de 3 s)
+const page = <T extends Record<string, unknown>>(loader: () => Promise<T>, name: keyof T) =>
+  lazy(() => loader().then((m) => ({ default: m[name] as React.ComponentType })))
+
+const DashboardPage = page(() => import('./pages/dashboard/DashboardPage'), 'DashboardPage')
+const MapPage = page(() => import('./pages/dashboard/DashboardPage'), 'MapPage')
+const ReservoirsPage = page(() => import('./pages/reservoirs/ReservoirsPage'), 'ReservoirsPage')
+const ReservoirDetailPage = page(() => import('./pages/reservoirs/ReservoirDetailPage'), 'ReservoirDetailPage')
+const DailyEntryPage = page(() => import('./pages/ingest/DailyEntryPage'), 'DailyEntryPage')
+const ImportPage = page(() => import('./pages/ingest/ImportPage'), 'ImportPage')
+const ModelsPage = page(() => import('./pages/ml/ModelsPage'), 'ModelsPage')
+const SatellitePage = page(() => import('./pages/satellite/SatellitePage'), 'SatellitePage')
+const UsersPage = page(() => import('./pages/admin/UsersPage'), 'UsersPage')
+const AuditPage = page(() => import('./pages/admin/AuditPage'), 'AuditPage')
+const StatusPage = page(() => import('./pages/StatusPage'), 'StatusPage')
+
+const s = (el: ReactNode) => <Suspense fallback={<Spinner label="Cargando…" />}>{el}</Suspense>
 
 export const routes: RouteObject[] = [
   {
     element: <AuthLayout />,
+    errorElement: <ErrorPage />,
     children: [
       {
         element: <AnonymousOnly />,
@@ -33,42 +46,51 @@ export const routes: RouteObject[] = [
   },
   {
     element: <RequireAuth />,
+    errorElement: <ErrorPage />,
     children: [
       {
         element: <AppShell />,
         children: [
           { path: 'cambiar-clave', element: <ChangePasswordPage /> },
           {
+            element: <RequirePermission module={MODULES.dashboard} />,
+            children: [{ index: true, element: s(<DashboardPage />) }],
+          },
+          {
+            element: <RequirePermission module={MODULES.map} />,
+            children: [{ path: 'mapa', element: s(<MapPage />) }],
+          },
+          {
             element: <RequirePermission module={MODULES.reservoirs} />,
             children: [
-              { index: true, element: <ReservoirsPage /> },
-              { path: 'embalses/:code', element: <ReservoirDetailPage /> },
+              { path: 'embalses', element: s(<ReservoirsPage />) },
+              { path: 'embalses/:code', element: s(<ReservoirDetailPage />) },
             ],
           },
           {
             element: <RequirePermission module={MODULES.ingest} level="MANAGE" />,
             children: [
-              { path: 'registro', element: <DailyEntryPage /> },
-              { element: <RequireImporter />, children: [{ path: 'importar', element: <ImportPage /> }] },
+              { path: 'registro', element: s(<DailyEntryPage />) },
+              { element: <RequireImporter />, children: [{ path: 'importar', element: s(<ImportPage />) }] },
             ],
           },
           {
             element: <RequirePermission module={MODULES.prediction} />,
-            children: [{ path: 'modelos', element: <ModelsPage /> }],
+            children: [{ path: 'modelos', element: s(<ModelsPage />) }],
           },
           {
             element: <RequirePermission module={MODULES.satellite} />,
-            children: [{ path: 'satelite', element: <SatellitePage /> }],
+            children: [{ path: 'satelite', element: s(<SatellitePage />) }],
           },
           {
             element: <RequirePermission module={MODULES.users} level="MANAGE" />,
-            children: [{ path: 'usuarios', element: <UsersPage /> }],
+            children: [{ path: 'usuarios', element: s(<UsersPage />) }],
           },
           {
             element: <RequirePermission module={MODULES.audit} />,
-            children: [{ path: 'auditoria', element: <AuditPage /> }],
+            children: [{ path: 'auditoria', element: s(<AuditPage />) }],
           },
-          { path: 'estado', element: <StatusPage /> },
+          { path: 'estado', element: s(<StatusPage />) },
           { path: '*', element: <NotFoundPage /> },
         ],
       },

@@ -13,9 +13,9 @@ function navLinks() {
 
 describe('Navegación y permisos por rol (HU-1.8)', () => {
   it.each([
-    ['GERENCIA', ['Embalses', 'Modelos de predicción', 'Datos satelitales', 'Usuarios', 'Bitácora', 'Estado del sistema']],
-    ['INGENIERO', ['Embalses', 'Registro diario', 'Importar datos', 'Modelos de predicción', 'Datos satelitales', 'Estado del sistema']],
-    ['OPERADOR', ['Embalses', 'Registro diario', 'Estado del sistema']],
+    ['GERENCIA', ['Panel principal', 'Mapa', 'Embalses', 'Modelos de predicción', 'Datos satelitales', 'Usuarios', 'Bitácora', 'Estado del sistema']],
+    ['INGENIERO', ['Panel principal', 'Mapa', 'Embalses', 'Registro diario', 'Importar datos', 'Modelos de predicción', 'Datos satelitales', 'Estado del sistema']],
+    ['OPERADOR', ['Panel principal', 'Mapa', 'Embalses', 'Registro diario', 'Estado del sistema']],
   ] as const)('el menú de %s muestra solo sus módulos', async (role, expected) => {
     renderApp('/', { 'GET /reservoirs': [tule] }, makeMe(role))
     await screen.findByRole('heading', { name: 'Tulé' })
@@ -27,9 +27,9 @@ describe('Navegación y permisos por rol (HU-1.8)', () => {
     expect(await screen.findByRole('heading', { name: 'Registro diario' })).toBeInTheDocument()
   })
 
-  it('un Operador que escribe /usuarios en la barra vuelve a Embalses', async () => {
+  it('un Operador que escribe /usuarios en la barra vuelve al panel principal', async () => {
     renderApp('/usuarios', { 'GET /reservoirs': [tule] }, makeMe('OPERADOR'))
-    expect(await screen.findByRole('heading', { name: 'Embalses' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Panel principal' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Usuarios' })).not.toBeInTheDocument()
   })
 

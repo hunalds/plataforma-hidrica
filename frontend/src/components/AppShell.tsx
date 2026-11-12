@@ -1,4 +1,4 @@
-import { Brain, ClipboardText, Drop, FileArrowUp, Gauge, GlobeHemisphereWest, List, NotePencil, SignOut, UserCircle, Users, Waves, X } from '@phosphor-icons/react'
+import { Brain, ChartBar, ClipboardText, Drop, FileArrowUp, Gauge, GlobeHemisphereWest, List, MapTrifold, NotePencil, SignOut, UserCircle, Users, Waves, X } from '@phosphor-icons/react'
 import { useEffect, useState, type ComponentType } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router'
 
@@ -17,7 +17,9 @@ interface NavItem {
 
 // Solo se muestran los módulos ya construidos; los demás se agregan en sus iteraciones.
 const NAV: NavItem[] = [
-  { to: '/', label: es.nav.reservoirs, icon: Waves, module: MODULES.reservoirs },
+  { to: '/', label: es.nav.dashboard, icon: ChartBar, module: MODULES.dashboard },
+  { to: '/mapa', label: es.nav.map, icon: MapTrifold, module: MODULES.map },
+  { to: '/embalses', label: es.nav.reservoirs, icon: Waves, module: MODULES.reservoirs },
   { to: '/registro', label: es.nav.dailyEntry, icon: NotePencil, module: MODULES.ingest, level: 'MANAGE' },
   { to: '/importar', label: es.nav.import, icon: FileArrowUp, module: MODULES.ingest, level: 'MANAGE', hideFor: ['OPERADOR'] },
   { to: '/modelos', label: es.nav.models, icon: Brain, module: MODULES.prediction },

@@ -11,7 +11,7 @@ function Chip({ children, tone = 'alert' }: { children: React.ReactNode; tone?: 
   return <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-sm font-semibold ${cls}`}>{children}</span>
 }
 
-function ReservoirCard({ r, s }: { r: Reservoir; s: ReservoirStatus | undefined }) {
+export function ReservoirCard({ r, s }: { r: Reservoir; s: ReservoirStatus | undefined }) {
   return (
     <Link
       to={`/embalses/${r.code}`}

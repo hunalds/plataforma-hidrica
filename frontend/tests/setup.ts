@@ -15,6 +15,20 @@ class TestRequest extends NodeRequest {
 }
 globalThis.Request = TestRequest as typeof Request
 
+// jsdom no dibuja mapas: react-leaflet se reemplaza por contenedores simples (la lógica propia sí se prueba)
+vi.mock('react-leaflet', async () => {
+  const React = await import('react')
+  const Box = ({ children }: { children?: React.ReactNode }) => React.createElement('div', null, children)
+  const Layers = Object.assign(Box, { BaseLayer: Box, Overlay: Box })
+  return {
+    MapContainer: ({ children }: { children?: React.ReactNode }) => React.createElement('div', { 'data-testid': 'mapa' }, children),
+    TileLayer: () => null,
+    GeoJSON: ({ data }: { data: { features: { properties: { name: string } }[] } }) =>
+      React.createElement('ul', null, data.features.map((f) => React.createElement('li', { key: f.properties.name }, f.properties.name))),
+    LayersControl: Layers,
+  }
+})
+
 afterEach(() => {
   cleanup()
   vi.restoreAllMocks()

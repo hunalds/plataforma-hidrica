@@ -8,6 +8,8 @@ export const es = {
   },
   nav: {
     label: 'Navegación principal',
+    dashboard: 'Panel principal',
+    map: 'Mapa',
     reservoirs: 'Embalses',
     dailyEntry: 'Registro diario',
     import: 'Importar datos',

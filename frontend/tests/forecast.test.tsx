@@ -45,12 +45,23 @@ export const forecast: Forecast = {
 
 describe('Gráfica de proyección (HU-4.8)', () => {
   it('arma un solo eje con histórico, banda, mediana y umbrales rotulados', () => {
-    const hist = [{ day: '2026-10-14', level_m: 29.3 }, { day: '2026-10-15', level_m: 29.21 }] as never
+    const hist = [
+      { day: '2026-10-14', level_m: 29.3, hist_min: 28, hist_max: 33, hist_mean: 31 },
+      { day: '2026-10-15', level_m: 29.21, hist_min: 28.1, hist_max: 33.1, hist_mean: 31.1 },
+    ]
     const opt = forecastOption(hist, forecast) as { yAxis: { name: string }; series: { name: string; data: unknown[]; markLine?: { data: { name: string }[] } }[] }
     expect(opt.yAxis.name).toBe('Cota (m.s.n.m.)')
-    expect(opt.series.map((s) => s.name)).toEqual(['Cota observada', 'Banda inferior', 'Banda 80 %', 'Proyección (mediana)'])
-    expect(opt.series[3].data[0]).toEqual(['2026-10-15', 29.21]) // continúa desde el último dato
-    expect(opt.series[0].markLine?.data.map((d) => d.name)).toEqual(['Alerta baja', 'Volumen muerto', 'Nivel normal'])
+    expect(opt.series.map((s) => s.name)).toEqual([
+      'Histórico mínimo',
+      'Rango histórico',
+      'Cota observada',
+      'Banda inferior',
+      'Banda 80 %',
+      'Proyección (mediana)',
+    ])
+    expect(opt.series[1].data[0]).toEqual(['2026-10-14', 5]) // alto de la banda histórica = máx − mín
+    expect(opt.series[5].data[0]).toEqual(['2026-10-15', 29.21]) // continúa desde el último dato
+    expect(opt.series[2].markLine?.data.map((d) => d.name)).toEqual(['Alerta baja', 'Volumen muerto', 'Nivel normal'])
     expect(forecastAriaLabel(forecast)).toMatch(/a 30 días/)
   })
 })

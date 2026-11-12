@@ -204,7 +204,7 @@ export function ReservoirDetailPage() {
 
   return (
     <>
-      <Link to="/" className="mb-4 inline-flex min-h-11 items-center gap-2 font-semibold text-accent hover:text-primary">
+      <Link to="/embalses" className="mb-4 inline-flex min-h-11 items-center gap-2 font-semibold text-accent hover:text-primary">
         <ArrowLeft size={20} aria-hidden="true" /> Volver a embalses
       </Link>
       {isPending && <Spinner label="Cargando embalse…" />}

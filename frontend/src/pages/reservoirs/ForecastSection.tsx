@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { lazy, Suspense, useMemo, useState } from 'react'
 
 import { api, ApiError } from '../../api/client'
-import { MODEL_LABELS, type Forecast, type Measurement } from '../../api/types'
+import { MODEL_LABELS, type Forecast, type HistoryResponse } from '../../api/types'
 import { Metric } from '../../components/status'
 import { Alert, Card, Spinner } from '../../components/ui'
 import { forecastAriaLabel, forecastOption } from '../../lib/forecastChart'
@@ -24,10 +24,10 @@ export function ForecastSection({ code }: { code: string }) {
   const [view, setView] = useState<'grafica' | 'tabla'>('grafica')
   const fq = useQuery({ queryKey: ['forecast', code], queryFn: () => api.get<Forecast>(`/reservoirs/${code}/forecast`), retry: false })
   const hq = useQuery({
-    queryKey: ['measurements', code, 365],
-    queryFn: () => api.get<Measurement[]>(`/reservoirs/${code}/measurements?limit=365`),
+    queryKey: ['history', code, 365],
+    queryFn: () => api.get<HistoryResponse>(`/reservoirs/${code}/history?days=365`),
   })
-  const option = useMemo(() => (fq.data && hq.data ? forecastOption(hq.data, fq.data) : null), [fq.data, hq.data])
+  const option = useMemo(() => (fq.data && hq.data ? forecastOption(hq.data.points, fq.data) : null), [fq.data, hq.data])
 
   if (fq.isPending) return <Spinner label="Calculando la proyección…" />
   if (fq.isError) {
@@ -81,7 +81,8 @@ export function ForecastSection({ code }: { code: string }) {
             <EChart option={option} label={forecastAriaLabel(f)} height={380} />
           </Suspense>
           <p className="mt-1 text-sm text-muted-foreground">
-            La banda sombreada contiene el valor real 8 de cada 10 veces según las pruebas. Arrastra o usa la rueda para acercar.
+            Banda naranja: la cota real cae ahí 8 de cada 10 veces según las pruebas. Zona gris: rango de los años anteriores
+            ({hq.data?.years}) para la misma fecha. Arrastra o usa la rueda para acercar.
           </p>
         </div>
       )}
