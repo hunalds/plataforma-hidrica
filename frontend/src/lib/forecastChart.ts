@@ -42,7 +42,7 @@ export function forecastOption(points: Point[], f: Forecast): EChartsCoreOption 
   return {
     animation: false,
     textStyle: { fontFamily: CHART.font },
-    grid: { left: 56, right: 110, top: 36, bottom: 64 },
+    grid: { left: 56, right: 110, top: 64, bottom: 64 },
     legend: {
       top: 0,
       left: 0,

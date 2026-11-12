@@ -5,7 +5,7 @@ Tesis de Ingeniería en Informática (URBE, Maracaibo). Autores: Hunaldo Hernán
 Plataforma web con Machine Learning y datos satelitales que predice la disponibilidad hídrica de los embalses **Tulé, Manuelote y Tres Ríos** (estado Zulia) para MINAGUAS. El sistema complementa al software que ya usa la institución, no lo reemplaza.
 
 ## Forma de trabajar (obligatoria)
-- **XP por iteraciones.** Antes de cada iteración o historia se muestra un plan corto (historias, archivos, pruebas) y se **espera la aprobación** del usuario.
+- **XP por iteraciones.** Antes de cada iteración se muestra un plan corto (historias, archivos, pruebas). Desde la Iteración 4 los autores autorizaron avanzar sin esperar aprobación (C-34); las decisiones se registran en `docs/`.
 - Se escriben las pruebas primero cuando es posible: `pytest` en el backend y `vitest` en el frontend. Cada historia cierra con sus pruebas en verde.
 - **Un commit por historia**, con un mensaje descriptivo en español.
 - **No inventar datos reales, coordenadas ni fórmulas oficiales.** Lo que no esté confirmado se deja configurable y se anota en `docs/PENDIENTES.md`.
@@ -23,13 +23,13 @@ Plataforma web con Machine Learning y datos satelitales que predice la disponibi
 | Satélite | Interfaz `SatelliteProvider`: CHIRPS, ERA5-Land, Copernicus Data Space y Planetary Computer. **Sin servicios de Google** (no están disponibles en Venezuela). |
 | Frontend | React + Vite + TypeScript, Tailwind, React Router, TanStack Query, ECharts |
 | Mapa | Leaflet con OpenStreetMap o CARTO; capa satelital de Sentinel-2 Cloudless (EOX). **Sin Google Maps.** |
-| Despliegue | Docker en la Iteración 7: frontend en Vercel y backend en un VPS o en un servidor institucional |
+| Despliegue | `docker-compose.yml` (db, backend, frontend nginx + `/api`, backup, Caddy opcional) y `frontend/vercel.json`. **Escrito, sin probar** (P-32). |
 
 ## Estructura
 ```
 backend/   API FastAPI (app/api, core, models, schemas, services, jobs) + tests
 ml/        data/{synthetic,raw,processed}, notebooks, src, models, reports
-frontend/  React (se crea en HU-0.4)
+frontend/  React (src/pages por módulo, tests/ vitest, e2e/ Playwright)
 docs/      tesis: historias, arquitectura, pendientes, cambios respecto al prompt
 scripts/   utilidades (base de datos, verificaciones)
 ```
@@ -76,4 +76,14 @@ scripts/   utilidades (base de datos, verificaciones)
   - Open-Meteo limita el uso gratuito (429): se usa la media diaria y reintentos con espera.
   - Pruebas con red: `RUN_NETWORK_TESTS=1 uv run pytest tests/test_satellite.py`.
   - Heredocs muy largos en bash fallan en este entorno: para editar varios archivos, escribir un script .py en el scratchpad y ejecutarlo.
-- **Siguiente:** Iteración 4 (M6 Machine Learning: features, XGBoost, LSTM, backtesting y registro de modelos), a la espera del plan y la aprobación.
+- **Iteración 4 (M6): ✅** Paquete `hidrica_ml` (instalado editable en el backend). Modelos: persistencia, estacional, XGBoost (cuantiles, multihorizonte directo) y LSTM (PyTorch) con calibración conformal. Registro en `ml_models`; se activa el de menor MAE, incluidas las líneas base. Informe en `ml/reports/backtesting.md` (`app.cli train-models --report`).
+  - JSONB no conserva el orden de las claves: la importancia de las variables se ordena al leerla.
+- **Iteración 5 (M7, M8): ✅** El panel es la portada; mapa Leaflet con OSM y EOX; comparativo con la paleta dataviz validada (`#2a78d6`, `#eb6834`, `#1baf7a`). Carga diferida por ruta y de ECharts.
+- **Iteración 6 (M9, M10): ✅** Alertas observadas y proyectadas con `dedup_key`, escalamiento y resolución; canales en `services/notifications.py` (correo y Telegram activos; SMS y WhatsApp pendientes de proveedor). Se evalúan después de registrar o importar datos (`schedule_evaluation`). Reportes con ReportLab y openpyxl, más CSV con BOM, PNG, GeoJSON y KML.
+- **Iteración 7: ✅ (Docker sin probar)** Dockerfiles, compose, nginx, `vercel.json`, respaldos (`scripts/backup/`), rendimiento (`scripts/perf/`) y E2E con Playwright (`frontend/e2e/`, backend en el puerto 8010 y Vite en el 5180, base de pruebas).
+  - CORS expone `Content-Disposition` (lo detectaron las E2E).
+  - `conftest.py` vacía la base de pruebas **antes y después** de cada prueba, porque las E2E la siembran.
+  - Las pruebas de vitest que montan el panel deben simular `react-leaflet` y `components/charts/EChart`, porque jsdom no tiene canvas.
+- **Iteración 8 (M11): ✅** Página de ayuda y glosario; `scripts/docs/generate_docs.py` (diccionario de datos y referencia de la API); `docs/manual-usuario.md`, `docs/manual-tecnico.md`; capturas con `$env:CAPTURAS=1; npx playwright test e2e/capturas.spec.ts --project=escritorio` (excluidas por defecto).
+- **Pruebas al cierre:** ~205 en el backend (+1 con red), 25 en ml, 48 en el frontend y 8 E2E.
+- **Siguiente (fuera del alcance de desarrollo):** probar Docker y desplegar (P-32), cargar los datos oficiales y reentrenar (P-34), y confirmar los pendientes con MINAGUAS.

@@ -48,3 +48,23 @@ Cada valor de esta lista es **configurable** en el sistema. Mientras no se confi
 - [ ] **P-16** Normativas institucionales sobre el almacenamiento de datos: dónde deben residir los datos y por cuánto tiempo se retienen.
 - [ ] **P-17** Proveedor de SMS y WhatsApp para las alertas.
 - [ ] **P-18** Destinatarios oficiales de las alertas y sus canales (Ministro, Viceministro, Director Estadal).
+
+## Machine Learning (Iteración 4)
+- [ ] **P-34** Reentrenar con los **datos reales** de MINAGUAS (`ML_SATELLITE_SOURCE=real` y el histórico oficial) y repetir el backtesting. Las métricas actuales vienen de datos sintéticos y no describen el desempeño real.
+- [ ] **P-35** Cobertura de las bandas: tras la calibración conformal queda en ~79 % a 30 días y ~60 % a 60–90 días (objetivo: 80 %). Revisar con datos reales; si persiste, ampliar el método de calibración por horizonte.
+- [ ] **P-36** Frecuencia de reentrenamiento (hoy manual desde la pantalla "Modelos" o con `app.cli train-models`). Sugerido: mensual o al cargar un año nuevo.
+
+## Alertas y reportes (Iteración 6)
+- [ ] **P-37** Parámetros de las alertas proyectadas: horizonte de 30 días y probabilidad del 50 % (informativa desde el 20 %), configurables con `ALERT_PROJECTION_DAYS` y `ALERT_PROBABILITY`. Validar con la Gerencia.
+- [ ] **P-38** Bot de Telegram institucional (`TELEGRAM_BOT_TOKEN`) y los `chat_id` de los destinatarios.
+- [ ] **P-39** Formato oficial del boletín diario (logotipos, membrete, firmas). El actual es una propuesta.
+
+## Despliegue y operación (Iteración 7)
+- [ ] **P-32** **Probar Docker**: `docker compose up -d --build` no se ejecutó porque Docker no está instalado en el equipo de desarrollo. Tampoco se publicó en Vercel ni en un VPS (no hay cuentas). Es el primer paso antes de la defensa en un servidor.
+- [ ] **P-33** Ensayar la restauración (`scripts/backup/restore_db.sh`) sobre una base de pruebas y documentar el tiempo que tarda.
+- [ ] **P-40** Licencias de los mapas base en producción: OpenStreetMap (política de uso de los mosaicos: para mucho tráfico se necesita un servidor propio o un proveedor) y Sentinel-2 Cloudless de EOX (la licencia cambia según el año del mosaico y algunas versiones no permiten uso comercial: revisar los términos vigentes de EOX antes de publicar).
+- [ ] **P-41** Dominio, certificado y servidor definitivos (institucional o VPS), según P-16.
+- [ ] **P-42** Programar la ingesta satelital diaria con el cron del servidor (`app.cli satellite ...`), ya que no hay programador de tareas en la aplicación (C-08).
+
+## Documentación (Iteración 8)
+- [ ] **P-43** Videos tutoriales por rol: no se grabaron. El manual de usuario y las capturas cubren los mismos flujos.

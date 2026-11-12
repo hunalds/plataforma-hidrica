@@ -1,6 +1,6 @@
 # Arquitectura
 
-Documento vivo: se actualiza al cerrar cada iteración. **Estado: cierre de la Iteración 3 (2026-11-12).** Los bloques marcados *(previsto)* todavía no existen.
+Documento vivo: se actualiza al cerrar cada iteración. **Estado: cierre de la Iteración 8 (2026-11-12).** Todos los módulos M1–M12 están implementados; lo que depende de terceros (proveedor de SMS/WhatsApp, datos oficiales) está marcado como pendiente.
 
 ## 1. Arquitectura lógica (componentes)
 
@@ -15,19 +15,20 @@ flowchart LR
     subgraph Frontend["Frontend · React + Vite + TS"]
         UI[Páginas y componentes<br/>Tailwind · Phosphor]
         Q[TanStack Query<br/>cliente API]
-        MAP[Mapa Leaflet<br/>OSM / EOX <i>(previsto)</i>]
+        MAP[Mapa Leaflet ✅<br/>OSM / EOX]
+        CH2[Gráficas ECharts ✅]
     end
 
     subgraph Backend["Backend · FastAPI (Python 3.12)"]
-        API[Routers<br/>/health · /auth · /users · /audit · /reservoirs ✅<br/>/ingest · /measurements · /status · /balance ✅<br/>/satellite · /satellite/jobs ✅<br/>predicciones · alertas · reportes <i>(previsto)</i>]
-        SVC[Servicios<br/>auditoría · sesiones · correo · curvas ✅<br/>hydro_calcs · ingest · tabular ✅<br/>alertas · reportes <i>(previsto)</i>]
+        API[Routers<br/>/health · /auth · /users · /audit · /reservoirs ✅<br/>/ingest · /measurements · /status · /balance ✅<br/>/satellite · /satellite/jobs ✅<br/>/ml · /forecast · /dashboard · /map ✅<br/>/alerts · /reports ✅]
+        SVC[Servicios<br/>auditoría · sesiones · correo · curvas ✅<br/>hydro_calcs · ingest · tabular ✅<br/>ml_service · alerts · notifications · reports ✅]
         SAT[SatelliteProvider ✅<br/>chirps · era5_land_openmeteo · planetary_computer · mock]
         JOBS[Tareas manuales ✅<br/>BackgroundTasks + tabla jobs]
     end
 
     subgraph ML["ML · ml/ (Python 3.12)"]
         SYN[Dataset sintético ✅]
-        FEAT[features · XGBoost · LSTM PyTorch<br/>backtesting · registro <i>(previsto)</i>]
+        FEAT[hidrica_ml ✅<br/>features · XGBoost · LSTM PyTorch<br/>backtesting · calibración]
     end
 
     DB[(PostgreSQL 18<br/>+ PostGIS 3.6 ✅)]
@@ -50,6 +51,8 @@ flowchart LR
     SAT --> DB
     FEAT --> DB
     SYN -. datos de desarrollo .-> DB
+    UI --> CH2
+    SVC --> NOTIF[Canales ✅<br/>correo · Telegram<br/>SMS · WhatsApp pendientes]
 ```
 
 ## 2. Arquitectura física
@@ -68,7 +71,28 @@ flowchart TB
     Internet((Internet)) --- U
 ```
 
-### 2.2 Producción (previsto, Iteración 7)
+### 2.2 Producción (Iteración 7 · archivos listos, sin desplegar)
+
+Hay dos variantes. Los archivos están escritos (`docker-compose.yml`, `backend/Dockerfile`, `frontend/Dockerfile`, `frontend/nginx.conf`, `frontend/vercel.json`) pero Docker no estaba instalado en el equipo de desarrollo y no había cuentas de VPS ni Vercel (P-32).
+
+**Variante A — todo en un servidor (recomendada para MINAGUAS):**
+
+```mermaid
+flowchart TB
+    Nav[Navegador<br/>PC · tableta · teléfono]
+    subgraph SRV["VPS o servidor institucional · Docker Compose"]
+        CA[Caddy · HTTPS automático<br/>perfil https]
+        NG[frontend · nginx<br/>estáticos + proxy /api]
+        BE2[backend · FastAPI + ML<br/>uvicorn, usuario sin privilegios]
+        DB2[(db · postgis 18-3.6<br/>sin puertos publicados)]
+        BK2[backup · pg_dump diario<br/>retención BACKUP_KEEP_DAYS]
+    end
+    Nav -- HTTPS 443 --> CA --> NG -- /api --> BE2 --> DB2
+    BK2 --> DB2
+    BK2 --> V[(./backups)]
+```
+
+**Variante B — frontend en Vercel:**
 
 ```mermaid
 flowchart TB
@@ -227,7 +251,75 @@ erDiagram
     }
 ```
 
-Previstas para las próximas iteraciones: `MODELO_ML` y `PREDICCION` (M6), `ALERTA` (M9).
+Tablas agregadas en las Iteraciones 4 y 6 (migraciones `0005` y `0006_alerts`):
+
+```mermaid
+erDiagram
+    RESERVOIRS ||--o{ ML_MODELS : "modelos entrenados"
+    USERS ||--o{ ML_MODELS : "entrenó"
+    RESERVOIRS ||--o{ ALERTS : genera
+    ALERTS ||--o{ ALERT_ACKS : "acuses"
+    USERS ||--o{ ALERT_ACKS : "atendió"
+    ALERTS ||--o{ ALERT_DELIVERIES : "envíos"
+    RESERVOIRS |o--o{ ALERT_RECIPIENTS : "filtra (opcional)"
+
+    ML_MODELS {
+        int id PK
+        string reservoir_code FK
+        string kind "persistencia | estacional | xgboost | lstm"
+        string version_tag
+        string data_source "sintetico | real"
+        jsonb test_years
+        jsonb params
+        jsonb metrics "MAE, RMSE, sesgo, cobertura por horizonte"
+        jsonb importance
+        float score "MAE medio de volumen (hm³)"
+        string artifact_dir
+        bool pinned
+        int created_by FK
+    }
+    ALERTS {
+        int id PK
+        string reservoir_code FK
+        string dedup_key "embalse:tipo:dirección"
+        string kind "observada | proyectada"
+        string direction "escasez | inundacion_alivio"
+        string severity "informativa | alerta | critica"
+        string threshold
+        float threshold_level
+        float value
+        int horizon_days
+        float probability
+        date event_day
+        timestamptz resolved_at
+    }
+    ALERT_ACKS {
+        int id PK
+        int alert_id FK
+        int user_id FK
+        string user_email
+        timestamptz at
+    }
+    ALERT_DELIVERIES {
+        int id PK
+        int alert_id FK
+        string channel "correo | telegram | sms | whatsapp"
+        string recipient
+        string status "enviada | error | omitida"
+        string severity
+    }
+    ALERT_RECIPIENTS {
+        int id PK
+        string name
+        string channel
+        string target
+        string reservoir_code FK
+        string min_severity
+        bool active
+    }
+```
+
+Las predicciones **no se guardan**: se calculan al consultar con el modelo activo (en caché) y así siempre usan el último dato. El diccionario completo de columnas está en [diccionario-datos.md](diccionario-datos.md).
 
 ## 4. Casos de uso (Iteración 1)
 
@@ -347,3 +439,41 @@ sequenceDiagram
 | Copia versionada de los polígonos OSM (`app/data/geo`) | El sistema no depende de que OSM o Nominatim estén disponibles, y la geometría usada queda trazable. |
 | Tareas con `BackgroundTasks` + tabla `jobs` | Descargas de minutos u horas sin bloquear la API, con avance visible y sin instalar Redis ni Celery. |
 | Fórmulas en funciones puras (`hydro_calcs.py`) | Se auditan y prueban sin base de datos. Es el único lugar que hay que cambiar cuando MINAGUAS valide las fórmulas. |
+| Paquete `hidrica_ml` compartido por el backend y los cuadernos | Las features y los modelos de la tesis son exactamente los que corren en producción. |
+| Registro de modelos propio (`ml_models` + archivos) en lugar de MLflow | Un servidor menos que mantener; cumple lo necesario (versiones, métricas, activo, fijado). |
+| Selección automática por MAE, incluida la línea base | Si el ML no supera a la línea base estacional, se usa la línea base: honestidad frente al usuario. |
+| Calibración conformal de las bandas | Las bandas de XGBoost y LSTM se ajustan con los residuos de validación para acercarse al 80 % nominal. |
+| Alertas con `dedup_key` y escalamiento | Una alerta por evento: no inunda de mensajes a la Gerencia y sí avisa cuando la situación empeora. |
+| Canales detrás de `NotificationChannel` | Agregar SMS o WhatsApp es implementar una clase, sin tocar la lógica de alertas. |
+| Reportes con ReportLab (sin dependencias del sistema) | Funciona igual en Windows, en Docker slim y en el servidor institucional. |
+| Frontend servido por nginx con proxy `/api` | Mismo origen en producción: sin CORS ni cookies de terceros. |
+
+## 9. Secuencia: evaluación de alertas (Iteración 6)
+
+```mermaid
+sequenceDiagram
+    actor O as Operador
+    participant API as FastAPI
+    participant AL as services/alerts
+    participant ML as ml_service
+    participant DB as PostgreSQL
+    participant CH as Canales (correo, Telegram)
+    O->>API: POST /measurements (lectura del día)
+    API->>DB: guarda el registro
+    API-->>O: 201 Creado
+    API->>AL: evaluate() en segundo plano
+    AL->>DB: estado actual y umbrales
+    AL->>ML: forecast(30 días)
+    ML-->>AL: probabilidades por umbral
+    AL->>DB: busca alerta abierta con la misma dedup_key
+    alt nueva o escalada
+        AL->>DB: crea o actualiza la alerta
+        AL->>CH: notifica a los destinatarios por severidad
+        CH-->>AL: enviada / error / omitida
+        AL->>DB: registra cada envío
+    else sin cambios
+        AL->>DB: actualiza valor y fecha
+    else la condición desapareció
+        AL->>DB: marca resuelta
+    end
+```

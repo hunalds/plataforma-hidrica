@@ -8,9 +8,15 @@ Autores: Hunaldo Hernández y Angie Rubistein. Tutores: Miguel Vílchez y Maribe
 > ⚠️ Los datos de `ml/data/synthetic/` son **sintéticos** y solo sirven para el desarrollo. No representan mediciones reales de MINAGUAS.
 
 ## Estado
-Iteración 0 (Exploración) cerrada. Ver [docs/historias-de-usuario.md](docs/historias-de-usuario.md) y [docs/arquitectura.md](docs/arquitectura.md).
+Iteraciones 0 a 8 cerradas: los módulos M1–M12 están implementados y probados con datos **sintéticos**. Pendiente: probar Docker y desplegar (P-32), y cargar los datos oficiales de MINAGUAS.
+
+![Panel principal](docs/capturas/m7-panel-principal.png)
 
 ## Documentación
+- [docs/manual-usuario.md](docs/manual-usuario.md): manual de usuario por rol, con capturas
+- [docs/manual-tecnico.md](docs/manual-tecnico.md): instalación, despliegue (Docker, Vercel), respaldo, CLI y variables
+- [docs/arquitectura.md](docs/arquitectura.md) · [docs/historias-de-usuario.md](docs/historias-de-usuario.md) · [docs/diccionario-datos.md](docs/diccionario-datos.md) · [docs/api/endpoints.md](docs/api/endpoints.md)
+- [ml/reports/backtesting.md](ml/reports/backtesting.md): evaluación de los modelos de predicción
 - [CLAUDE.md](CLAUDE.md): decisiones del proyecto y forma de trabajo
 - [docs/CAMBIOS-PROMPT.md](docs/CAMBIOS-PROMPT.md): cambios respecto a los requerimientos originales
 - [docs/PENDIENTES.md](docs/PENDIENTES.md): datos y fórmulas por confirmar con MINAGUAS

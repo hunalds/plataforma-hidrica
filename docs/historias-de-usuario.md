@@ -274,3 +274,198 @@ Estados: ⬜ pendiente · 🔄 en curso · ✅ terminada
 - **Criterios de aceptación:**
   - Tarjeta de indicadores con ayudas y aviso de geometría provisional.
   - Pantalla "Datos satelitales" con avance en vivo, cobertura y fuentes.
+
+---
+
+## Iteración 4 — Machine Learning (M6)
+
+### HU-4.1 · Paquete de ML reutilizable ✅
+- **Rol:** equipo de desarrollo · **Prioridad:** Alta · **Estimación:** 1
+- **Historia:** Como equipo, quiero que el código de ML sea un paquete instalable para que el backend y los cuadernos usen exactamente las mismas funciones.
+- **Criterios de aceptación:**
+  - `ml/` se instala como el paquete `hidrica_ml` (editable) en el backend.
+  - El dataset sintético, las features y los modelos se importan desde el paquete, sin copias.
+
+### HU-4.2 · Datos satelitales sintéticos coherentes con la hidrología ✅
+- **Rol:** Ingeniero · **Prioridad:** Alta · **Estimación:** 2
+- **Historia:** Como Ingeniero, quiero lluvia, humedad del suelo y superficie de agua sintéticas que sean coherentes con el histórico sintético, para entrenar y probar los modelos antes de tener los datos reales.
+- **Criterios de aceptación:**
+  - La lluvia sintética genera las entradas del histórico sintético (no son series independientes).
+  - Se marcan como SINTÉTICAS en la base (`source`) y en la interfaz.
+  - `ML_SATELLITE_SOURCE=sintetico|real` elige la fuente sin tocar el código.
+
+### HU-4.3 · Ingeniería de variables ✅
+- **Rol:** Ingeniero · **Prioridad:** Alta · **Estimación:** 2
+- **Historia:** Como Ingeniero, quiero variables derivadas (rezagos, acumulados de lluvia, estacionalidad, tendencia) para que los modelos aprendan la dinámica del embalse.
+- **Criterios de aceptación:**
+  - Rezagos de cota y volumen, lluvia acumulada (7, 30, 90 días), anomalías, humedad del suelo, seno y coseno del día del año.
+  - Sin fuga de información: cada variable usa solo datos anteriores al origen de la predicción (con prueba).
+
+### HU-4.4 · Modelos de predicción ✅
+- **Rol:** Ingeniero · **Prioridad:** Alta · **Estimación:** 5
+- **Historia:** Como Ingeniero, quiero comparar líneas base y modelos de ML para elegir el más preciso en cada embalse.
+- **Criterios de aceptación:**
+  - Líneas base: persistencia y estacional (climatología del cambio de cota).
+  - XGBoost con regresión por cuantiles (p10, p50, p90) y horizontes directos de 1 a 90 días.
+  - LSTM en PyTorch con intervalos calibrados por conformal.
+  - Calibración de las bandas para que cubran cerca del 80 % en validación.
+
+### HU-4.5 · Backtesting walk-forward ✅
+- **Rol:** Ingeniero · **Prioridad:** Alta · **Estimación:** 3
+- **Historia:** Como Ingeniero, quiero evaluar los modelos con backtesting por años para saber qué error esperar a 30, 60 y 90 días.
+- **Criterios de aceptación:**
+  - Entrena con los años anteriores y prueba con el año siguiente, con orígenes repartidos en el año.
+  - Métricas por horizonte: MAE, RMSE, sesgo y cobertura de la banda.
+  - Informe `ml/reports/backtesting.md` con gráficas.
+
+### HU-4.6 · Registro de modelos y selección automática ✅
+- **Rol:** Ingeniero · **Prioridad:** Alta · **Estimación:** 3
+- **Historia:** Como Ingeniero, quiero que el sistema guarde cada modelo entrenado con sus métricas y active el de menor error en cada embalse.
+- **Criterios de aceptación:**
+  - Tabla `ml_models` con el tipo, la versión, las métricas, la importancia de las variables y el archivo.
+  - Se activa el modelo de menor MAE medio, aunque sea una línea base.
+  - Entrenamiento en segundo plano (`POST /ml/train`) con avance visible.
+
+### HU-4.7 · Fijado manual y proyección por API ✅
+- **Rol:** Ingeniero · **Prioridad:** Media · **Estimación:** 2
+- **Historia:** Como Ingeniero, quiero fijar a mano el modelo de un embalse y consultar su proyección a 90 días.
+- **Criterios de aceptación:**
+  - Fijar y liberar un modelo; queda registrado en la bitácora.
+  - `GET /reservoirs/{code}/forecast`: cota, volumen, disponibilidad, días de reserva y probabilidades de cruzar cada umbral a 30, 60 y 90 días.
+
+### HU-4.8 · Gráfica de proyección y pantalla de modelos ✅
+- **Rol:** todos (consulta) e Ingeniero (gestión) · **Prioridad:** Alta · **Estimación:** 3
+- **Historia:** Como usuario, quiero ver en la ficha la proyección a 90 días con su banda de incertidumbre frente al rango histórico.
+- **Criterios de aceptación:**
+  - Gráfica con el observado, el rango histórico, la mediana proyectada y la banda del 80 %, más la vista de tabla.
+  - Pantalla "Modelos de predicción" con las métricas, la importancia de las variables y los botones de entrenar y fijar.
+
+---
+
+## Iteración 5 — Panel principal y mapa (M7, M8)
+
+### HU-5.1 · Panel principal con semáforo ✅
+- **Rol:** todos · **Prioridad:** Alta · **Estimación:** 3
+- **Historia:** Como Gerencia, quiero ver de un vistazo el estado de los tres embalses al entrar a la plataforma.
+- **Criterios de aceptación:**
+  - Una tarjeta por embalse: semáforo, cota, disponibilidad, volumen útil, días de reserva y aviso de dato desactualizado.
+  - Marcado "Datos sintéticos" mientras no haya datos reales.
+  - El panel es la portada de la aplicación.
+
+### HU-5.2 · Mapa geoespacial con capas ✅
+- **Rol:** todos · **Prioridad:** Alta · **Estimación:** 3
+- **Historia:** Como usuario, quiero ver los embalses en un mapa, coloreados por su estado, con la lluvia y la humedad del suelo de sus áreas de influencia.
+- **Criterios de aceptación:**
+  - Leaflet con OpenStreetMap y Sentinel-2 Cloudless (EOX); sin servicios de Google.
+  - Capas: lluvia de 30 días, humedad del suelo y solo contornos, con leyenda y atribución de las fuentes.
+  - Al tocar un embalse se muestra su resumen y un enlace a la ficha.
+
+### HU-5.3 · Comparativo entre embalses ✅
+- **Rol:** Gerencia e Ingeniero · **Prioridad:** Media · **Estimación:** 2
+- **Historia:** Como Gerencia, quiero comparar la disponibilidad de los tres embalses en el último año.
+- **Criterios de aceptación:**
+  - Gráfica de disponibilidad (%) con un solo eje, etiquetas directas y vista de tabla.
+  - Paleta categórica validada para daltonismo (`#2a78d6`, `#eb6834`, `#1baf7a`).
+
+### HU-5.4 · Rendimiento de la interfaz ✅
+- **Rol:** todos · **Prioridad:** Alta · **Estimación:** 1
+- **Historia:** Como usuario con conexión lenta, quiero que el panel cargue en menos de 3 segundos.
+- **Criterios de aceptación:**
+  - Carga diferida por ruta y de ECharts.
+  - Pantalla de error amigable si falla una vista.
+
+---
+
+## Iteración 6 — Alertas tempranas y reportes (M9, M10)
+
+### HU-6.1 · Alertas por condiciones observadas ✅
+- **Rol:** Gerencia e Ingeniero · **Prioridad:** Alta · **Estimación:** 3
+- **Historia:** Como Gerencia, quiero recibir una alerta cuando un embalse cruce un umbral de escasez o de alivio.
+- **Criterios de aceptación:**
+  - Severidades: informativa, alerta y crítica; direcciones: escasez e inundación/alivio.
+  - Una alerta por evento: si la condición sigue, se actualiza (no se duplica); si empeora, escala y vuelve a notificar; si desaparece, se resuelve.
+  - Se evalúa al guardar un registro manual o al confirmar una importación.
+
+### HU-6.2 · Alertas tempranas proyectadas ✅
+- **Rol:** Gerencia e Ingeniero · **Prioridad:** Alta · **Estimación:** 2
+- **Historia:** Como Gerencia, quiero saber con anticipación si el modelo proyecta que un embalse cruzará un umbral.
+- **Criterios de aceptación:**
+  - Alerta proyectada si la probabilidad de cruzar un umbral en 30 días supera el 50 % (informativa desde el 20 %), configurable.
+  - Las alertas proyectadas se distinguen de las observadas.
+
+### HU-6.3 · Canales y destinatarios ✅
+- **Rol:** Gerencia · **Prioridad:** Media · **Estimación:** 3
+- **Historia:** Como Gerencia, quiero definir quién recibe las alertas y por qué canal.
+- **Criterios de aceptación:**
+  - Destinatarios con canal, severidad mínima y embalses; botón de prueba.
+  - Correo y Telegram activos; SMS y WhatsApp detrás de la misma interfaz, pendientes de proveedor (P-17).
+  - Cada envío queda registrado con su resultado.
+
+### HU-6.4 · Pantalla de alertas y acuse de recibo ✅
+- **Rol:** todos · **Prioridad:** Alta · **Estimación:** 2
+- **Historia:** Como Ingeniero, quiero ver las alertas activas y marcarlas como atendidas.
+- **Criterios de aceptación:**
+  - Lista filtrable con severidad (icono + texto, no solo color), historial y acuse con usuario y hora.
+  - Resumen de alertas activas en el panel principal.
+
+### HU-6.5 · Reportes descargables ✅
+- **Rol:** Gerencia e Ingeniero · **Prioridad:** Alta · **Estimación:** 3
+- **Historia:** Como Gerencia, quiero descargar el boletín diario y los reportes de predicción, histórico, comparativo y alertas.
+- **Criterios de aceptación:**
+  - Formatos: PDF, Excel, CSV (con BOM para Excel en español), PNG, GeoJSON y KML.
+  - Los reportes con datos sintéticos lo indican.
+  - Pantalla "Reportes" con filtros de embalse y fechas.
+
+---
+
+## Iteración 7 — Despliegue, respaldo y calidad
+
+### HU-7.1 · Contenedores y orquestación ✅ (escrito, sin probar)
+- **Rol:** equipo de desarrollo · **Prioridad:** Alta · **Estimación:** 3
+- **Historia:** Como equipo, quiero levantar toda la plataforma con un comando en un VPS o servidor institucional.
+- **Criterios de aceptación:**
+  - Dockerfiles del backend (usuario sin privilegios, migraciones al arrancar) y del frontend (nginx con proxy `/api`).
+  - `docker-compose.yml` con base PostGIS, backend, frontend, respaldo y Caddy (HTTPS) opcional.
+  - `frontend/vercel.json` para publicar el frontend en Vercel.
+  - **Nota:** Docker no está instalado en el equipo de desarrollo; la prueba queda pendiente (P-32).
+
+### HU-7.2 · Respaldo y restauración ✅
+- **Rol:** administrador · **Prioridad:** Alta · **Estimación:** 2
+- **Historia:** Como administrador, quiero respaldos diarios automáticos y un procedimiento de restauración probado.
+- **Criterios de aceptación:**
+  - `pg_dump` diario con retención configurable (Docker) y script local para Windows.
+  - Restauración con confirmación explícita.
+  - Probado en local: `backup_local.ps1` generó un respaldo de 1,3 MB. La restauración sobre una base real queda por ensayar (P-33).
+
+### HU-7.3 · Rendimiento y pruebas de punta a punta ✅
+- **Rol:** equipo de desarrollo · **Prioridad:** Alta · **Estimación:** 3
+- **Historia:** Como equipo, quiero medir el tiempo de respuesta y probar los flujos completos en un navegador real.
+- **Criterios de aceptación:**
+  - Medición del panel (151 ms) y de la ficha (249 ms) en la API; evidencia en `docs/evidencias/`.
+  - 4 flujos E2E con Playwright en escritorio y teléfono (8 pruebas): panel, boletín en Excel, registro del Operador y rechazo de credenciales.
+  - Corrección encontrada por las E2E: CORS expone `Content-Disposition` para el nombre de los archivos.
+
+---
+
+## Iteración 8 — Ayuda y documentación (M11)
+
+### HU-8.1 · Ayuda y glosario en la plataforma ✅
+- **Rol:** todos · **Prioridad:** Media · **Estimación:** 2
+- **Historia:** Como usuario nuevo, quiero una página de ayuda con los términos técnicos explicados en lenguaje sencillo.
+- **Criterios de aceptación:**
+  - Glosario (cota, volumen útil, días de reserva, alivio, NDWI, banda de incertidumbre…), guía por rol y preguntas frecuentes.
+  - Íconos de ayuda junto a cada indicador.
+
+### HU-8.2 · Documentación técnica generada desde el código ✅
+- **Rol:** equipo de desarrollo · **Prioridad:** Media · **Estimación:** 1
+- **Historia:** Como futuro mantenedor, quiero un diccionario de datos y una referencia de la API que no se desactualicen.
+- **Criterios de aceptación:**
+  - `scripts/docs/generate_docs.py` genera `docs/diccionario-datos.md`, `docs/api/openapi.json` y `docs/api/endpoints.md`.
+
+### HU-8.3 · Manuales y capturas ✅
+- **Rol:** usuarios y administradores · **Prioridad:** Alta · **Estimación:** 3
+- **Historia:** Como usuario y como administrador, quiero manuales para operar e instalar la plataforma.
+- **Criterios de aceptación:**
+  - `docs/manual-usuario.md` (por rol) y `docs/manual-tecnico.md` (instalación, despliegue, respaldo, CLI y variables).
+  - Capturas de cada módulo en `docs/capturas/`, generadas con Playwright (`e2e/capturas.spec.ts`, con `CAPTURAS=1`).
+  - `docs/CAMBIOS-PROMPT.md` completo con todas las desviaciones del prompt original.
