@@ -1,0 +1,55 @@
+# --- Secretos (nunca en Git) ---
+.env
+.env.*
+!.env.example
+*.pem
+*service-account*.json
+.netrc
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+*.egg-info/
+
+# --- Node / frontend ---
+node_modules/
+dist/
+coverage/
+*.local
+
+# --- Datos y modelos (pesados o sensibles) ---
+ml/data/raw/*
+ml/data/processed/*
+ml/models/*
+!ml/data/raw/.gitkeep
+!ml/data/processed/.gitkeep
+!ml/models/.gitkeep
+*.zarr/
+*.nc
+*.tif
+
+# --- Respaldos de base de datos ---
+backups/
+*.dump
+*.sql.gz
+
+# --- Herramientas de IA ---
+# Skills de terceros: se reinstalan según docs/herramientas-ia.md (pesan ~39 MB)
+.claude/skills/
+.claude/settings.local.json
+.taste-skill/
+
+# --- Sistema / editores ---
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.log
