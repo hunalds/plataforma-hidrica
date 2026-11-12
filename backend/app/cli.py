@@ -4,6 +4,7 @@
     uv run python -m app.cli create-user --email ... --name ... --role GERENCIA
     uv run python -m app.cli demo-users                 # usuarios de prueba, uno por rol (solo desarrollo)
     uv run python -m app.cli load-synthetic-curves      # curvas SINTÉTICAS (solo desarrollo)
+    uv run python -m app.cli load-synthetic-measurements  # histórico SINTÉTICO hasta 2026-10-15
 
 Las contraseñas generadas son temporales: se muestran una sola vez y deben cambiarse al entrar.
 """
@@ -141,6 +142,56 @@ def cmd_load_synthetic_curves(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_load_synthetic_measurements(args: argparse.Namespace) -> int:
+    """Importa el histórico sintético usando el MISMO flujo de validación que la importación web."""
+    if get_settings().app_env == "production":
+        print("Los datos sintéticos no se cargan en producción.", file=sys.stderr)
+        return 1
+    from app.models.measurement import MeasurementSource
+    from app.services.ingest import parse_measurement_file, save_rows, validate
+
+    path = Path(args.file)
+    if not path.exists():
+        print(
+            f"No se encontró {path}. Genera el dataset con: cd ml; uv run python -m src.synthetic",
+            file=sys.stderr,
+        )
+        return 1
+    until = date.fromisoformat(args.until)
+    raw, parse_issues = parse_measurement_file(path.read_bytes(), path.name)
+    raw = [r for r in raw if r.day <= until]
+    with _session() as s:
+        seed_reservoirs(s)
+        s.commit()
+        result = validate(s, raw, allowed_codes=None)
+        saved = save_rows(
+            s, result.rows, overwrite=args.overwrite, source=MeasurementSource.IMPORT, user_id=None
+        )
+        log_action(
+            s,
+            "ingest.synthetic",
+            actor_email="cli",
+            entity="daily_measurements",
+            new={
+                "archivo": path.name,
+                "hasta": until.isoformat(),
+                "insertadas": saved.inserted,
+                "actualizadas": saved.updated,
+            },
+        )
+        s.commit()
+    errors = [i for i in parse_issues + result.issues if i.severity == "error"]
+    warnings = len(result.issues) - len([i for i in result.issues if i.severity == "error"])
+    print(
+        f"Filas leídas: {len(raw)} (hasta {until}) · insertadas: {saved.inserted} "
+        f"· actualizadas: {saved.updated} "
+        f"· omitidas: {saved.skipped} · errores: {len(errors)} · avisos: {warnings}"
+    )
+    for i in errors[:10]:
+        print(f"  ERROR fila {i.row}: {i.message}")
+    return 0 if not errors else 2
+
+
 def main(argv: list[str] | None = None) -> int:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     parser = argparse.ArgumentParser(
@@ -164,6 +215,14 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("load-synthetic-curves", help="Cargar curvas SINTÉTICAS (solo desarrollo)")
     p.add_argument("--folder", default=str(SYNTHETIC_DIR))
     p.set_defaults(func=cmd_load_synthetic_curves)
+
+    p = sub.add_parser("load-synthetic-measurements", help="Cargar el histórico SINTÉTICO (solo desarrollo)")
+    p.add_argument("--file", default=str(SYNTHETIC_DIR / "movimiento_diario_sintetico.csv"))
+    p.add_argument(
+        "--until", default="2026-10-15", help="Fecha final (los ejemplos de importación cubren lo posterior)"
+    )
+    p.add_argument("--overwrite", action="store_true", help="Reemplazar días que ya existan")
+    p.set_defaults(func=cmd_load_synthetic_measurements)
 
     args = parser.parse_args(argv)
     return args.func(args)

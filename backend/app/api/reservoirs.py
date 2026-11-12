@@ -47,14 +47,14 @@ Reader = Annotated[User, Depends(require(Module.RESERVOIRS, Access.READ))]
 Manager = Annotated[User, Depends(require(Module.RESERVOIRS, Access.MANAGE))]
 
 
-def _visible_codes(user: User) -> set[str] | None:
+def visible_codes(user: User) -> set[str] | None:
     """None = todos (Gerencia)."""
     return None if user.role == Role.GERENCIA else set(user.reservoir_codes)
 
 
-def _get_visible(session: Session, user: User, code: str) -> Reservoir:
+def get_visible_reservoir(session: Session, user: User, code: str) -> Reservoir:
     reservoir = session.get(Reservoir, code.upper())
-    visible = _visible_codes(user)
+    visible = visible_codes(user)
     # 404 también cuando no está asignado: no se revela qué embalses existen
     if reservoir is None or (visible is not None and reservoir.code not in visible):
         raise api_error(404, "NOT_FOUND", "Embalse no encontrado.")
@@ -95,6 +95,7 @@ def _reservoir_out(session: Session, r: Reservoir) -> ReservoirOut:
         records_start=r.records_start,
         normal_level=r.normal_level,
         dead_level=r.dead_level,
+        qc_max_daily_change_m=r.qc_max_daily_change_m,
         has_geometry=r.geom is not None,
         has_basin_geometry=r.basin_geom is not None,
         thresholds=ThresholdsOut.model_validate(r.thresholds) if r.thresholds else ThresholdsOut(),
@@ -113,7 +114,7 @@ def _reservoir_out(session: Session, r: Reservoir) -> ReservoirOut:
 @router.get("", response_model=list[ReservoirOut], summary="Listar los embalses visibles para el usuario")
 def list_reservoirs(session: DbSession, user: Reader) -> list[ReservoirOut]:
     stmt = select(Reservoir).order_by(Reservoir.name)
-    visible = _visible_codes(user)
+    visible = visible_codes(user)
     if visible is not None:
         stmt = stmt.where(Reservoir.code.in_(visible))
     return [_reservoir_out(session, r) for r in session.scalars(stmt).all()]
@@ -133,7 +134,7 @@ def curve_template() -> PlainTextResponse:
 
 @router.get("/{code}", response_model=ReservoirOut, summary="Ficha del embalse")
 def get_reservoir(code: str, session: DbSession, user: Reader) -> ReservoirOut:
-    return _reservoir_out(session, _get_visible(session, user, code))
+    return _reservoir_out(session, get_visible_reservoir(session, user, code))
 
 
 def _ficha(r: Reservoir) -> dict[str, Any]:
@@ -144,6 +145,7 @@ def _ficha(r: Reservoir) -> dict[str, Any]:
         "records_start": r.records_start.isoformat() if r.records_start else None,
         "normal_level": r.normal_level,
         "dead_level": r.dead_level,
+        "qc_max_daily_change_m": r.qc_max_daily_change_m,
     }
 
 
@@ -151,7 +153,7 @@ def _ficha(r: Reservoir) -> dict[str, Any]:
 def update_reservoir(
     code: str, body: ReservoirUpdate, request: Request, session: DbSession, user: Manager
 ) -> ReservoirOut:
-    r = _get_visible(session, user, code)
+    r = get_visible_reservoir(session, user, code)
     before = _ficha(r)
     for field, value in body.model_dump(exclude_unset=True).items():
         setattr(r, field, value)
@@ -210,7 +212,7 @@ def _extract_geometry(geojson: dict[str, Any]) -> dict[str, Any]:
 def set_geometry(
     code: str, body: GeometryIn, request: Request, session: DbSession, user: Manager
 ) -> ReservoirOut:
-    r = _get_visible(session, user, code)
+    r = get_visible_reservoir(session, user, code)
     geometry = _extract_geometry(body.geojson)
     gj = json.dumps(geometry)
     try:
@@ -261,7 +263,7 @@ def get_geometry(
     user: Reader,
     kind: Annotated[str, Query(pattern="^(reservoir|basin)$")] = "reservoir",
 ) -> dict[str, Any]:
-    r = _get_visible(session, user, code)
+    r = get_visible_reservoir(session, user, code)
     column = Reservoir.geom if kind == "reservoir" else Reservoir.basin_geom
     raw = session.scalar(select(func.ST_AsGeoJSON(column)).where(Reservoir.code == r.code))
     if raw is None:
@@ -278,7 +280,7 @@ def get_geometry(
 
 @router.get("/{code}/thresholds", response_model=ThresholdsOut, summary="Umbrales del embalse")
 def get_thresholds(code: str, session: DbSession, user: Reader) -> ThresholdsOut:
-    r = _get_visible(session, user, code)
+    r = get_visible_reservoir(session, user, code)
     return ThresholdsOut.model_validate(r.thresholds) if r.thresholds else ThresholdsOut()
 
 
@@ -286,7 +288,7 @@ def get_thresholds(code: str, session: DbSession, user: Reader) -> ThresholdsOut
 def set_thresholds(
     code: str, body: ThresholdsIn, request: Request, session: DbSession, user: Manager
 ) -> ThresholdsOut:
-    r = _get_visible(session, user, code)
+    r = get_visible_reservoir(session, user, code)
     if body.low_critical is not None and body.low_critical < r.dead_level:
         raise api_error(
             422,
@@ -323,7 +325,7 @@ def set_thresholds(
     "/{code}/curves", response_model=list[CurveSummary], summary="Versiones de la curva cota–área–volumen"
 )
 def list_curves(code: str, session: DbSession, user: Reader) -> list[CurveSummary]:
-    r = _get_visible(session, user, code)
+    r = get_visible_reservoir(session, user, code)
     curves = session.scalars(
         select(ElevationCurve)
         .where(ElevationCurve.reservoir_code == r.code)
@@ -349,7 +351,7 @@ async def upload_curve(
     valid_from: Annotated[date, Form(description="Fecha desde la que rige esta curva")],
     notes: Annotated[str | None, Form(max_length=2000)] = None,
 ) -> CurveSummary:
-    r = _get_visible(session, user, code)
+    r = get_visible_reservoir(session, user, code)
     content = await file.read()
     try:
         points = parse_curve_file(content, file.filename or "")
@@ -418,7 +420,7 @@ def interpolate(
         default=None, description="Usa la curva vigente en esta fecha (por defecto, hoy)"
     ),
 ) -> InterpolationOut:
-    r = _get_visible(session, user, code)
+    r = get_visible_reservoir(session, user, code)
     if (cota is None) == (volumen is None):
         raise api_error(422, "BAD_QUERY", "Indica exactamente uno de los parámetros: cota o volumen.")
     curve = current_curve(session, r.code, fecha)
@@ -444,7 +446,7 @@ def interpolate(
     "/{code}/curves/{version}", response_model=CurveDetail, summary="Puntos de una versión de la curva"
 )
 def get_curve(code: str, version: int, session: DbSession, user: Reader) -> CurveDetail:
-    r = _get_visible(session, user, code)
+    r = get_visible_reservoir(session, user, code)
     curve = session.scalar(
         select(ElevationCurve).where(
             ElevationCurve.reservoir_code == r.code, ElevationCurve.version == version
