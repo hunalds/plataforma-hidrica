@@ -42,3 +42,10 @@ def test_cors_only_allows_configured_origins(settings: Settings):
         )
     assert ok.headers.get("access-control-allow-origin") == "http://permitido.test"
     assert "access-control-allow-origin" not in bad.headers
+
+
+def test_cors_exposes_content_disposition_for_downloads(settings: Settings):
+    app = create_app(settings.model_copy(update={"cors_origins": "http://permitido.test"}))
+    with TestClient(app) as c:
+        r = c.get("/reservoirs/curve-template.csv", headers={"Origin": "http://permitido.test"})
+    assert "content-disposition" in r.headers.get("access-control-expose-headers", "").lower()

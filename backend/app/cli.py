@@ -41,16 +41,18 @@ def _session():
     return sessionmaker(build_engine(get_settings()), expire_on_commit=False)()
 
 
-def _create_user(session, email: str, name: str, role: Role, reservoirs: list[str]) -> str | None:
+def _create_user(
+    session, email: str, name: str, role: Role, reservoirs: list[str], password: str | None = None
+) -> str | None:
     if session.scalar(select(User).where(User.email == email.lower())):
         return None
-    temporary = generate_temporary_password()
+    temporary = password or generate_temporary_password()
     user = User(
         email=email.lower(),
         full_name=name,
         role=role,
         password_hash=hash_password(temporary),
-        must_change_password=True,
+        must_change_password=password is None,  # con --password (pruebas E2E) no se fuerza el cambio
     )
     user.reservoirs = [session.get(Reservoir, c) for c in reservoirs if session.get(Reservoir, c)]
     session.add(user)
@@ -75,9 +77,14 @@ def cmd_seed(_: argparse.Namespace) -> int:
 
 
 def cmd_create_user(args: argparse.Namespace) -> int:
+    if args.password and get_settings().app_env == "production":
+        print("--password no se permite en producción.", file=sys.stderr)
+        return 1
     with _session() as s:
         seed_reservoirs(s)
-        temporary = _create_user(s, args.email, args.name, Role(args.role), args.reservoirs or [])
+        temporary = _create_user(
+            s, args.email, args.name, Role(args.role), args.reservoirs or [], args.password
+        )
         s.commit()
     if temporary is None:
         print(f"Ya existe un usuario con el correo {args.email}.", file=sys.stderr)
@@ -331,6 +338,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--name", required=True)
     p.add_argument("--role", required=True, choices=[r.value for r in Role])
     p.add_argument("--reservoirs", nargs="*", help="Códigos de embalses asignados (TULE MANUELOTE TRES_RIOS)")
+    p.add_argument("--password", help="Contraseña fija sin cambio obligatorio (solo desarrollo/pruebas E2E)")
     p.set_defaults(func=cmd_create_user)
 
     sub.add_parser("demo-users", help="Usuarios de demostración (uno por rol)").set_defaults(

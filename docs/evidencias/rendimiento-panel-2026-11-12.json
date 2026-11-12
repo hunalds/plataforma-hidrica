@@ -1,0 +1,71 @@
+{
+  "fecha": "2026-11-12T04:37:33",
+  "/reservoirs": {
+    "status": 200,
+    "mediana_ms": 20.3,
+    "max_ms": 21.4
+  },
+  "/reservoirs/status": {
+    "status": 200,
+    "mediana_ms": 28.2,
+    "max_ms": 80.8
+  },
+  "/map/features": {
+    "status": 200,
+    "mediana_ms": 43.0,
+    "max_ms": 44.1
+  },
+  "/dashboard/comparison?days=365": {
+    "status": 200,
+    "mediana_ms": 51.4,
+    "max_ms": 56.2
+  },
+  "/alerts?active=true&limit=8": {
+    "status": 200,
+    "mediana_ms": 7.8,
+    "max_ms": 8.1
+  },
+  "Panel principal": {
+    "suma_mediana_ms": 150.6,
+    "cumple_3s": true
+  },
+  "/reservoirs/TULE": {
+    "status": 200,
+    "mediana_ms": 11.1,
+    "max_ms": 13.6
+  },
+  "/reservoirs/TULE/status": {
+    "status": 200,
+    "mediana_ms": 13.7,
+    "max_ms": 14.7
+  },
+  "/reservoirs/TULE/forecast": {
+    "status": 200,
+    "mediana_ms": 130.8,
+    "max_ms": 231.8
+  },
+  "/reservoirs/TULE/history?days=365": {
+    "status": 200,
+    "mediana_ms": 37.3,
+    "max_ms": 38.7
+  },
+  "/reservoirs/TULE/satellite/summary": {
+    "status": 200,
+    "mediana_ms": 35.5,
+    "max_ms": 36.4
+  },
+  "/reservoirs/TULE/measurements?limit=30": {
+    "status": 200,
+    "mediana_ms": 11.5,
+    "max_ms": 12.1
+  },
+  "/reservoirs/TULE/balance": {
+    "status": 200,
+    "mediana_ms": 9.4,
+    "max_ms": 9.7
+  },
+  "Ficha de embalse": {
+    "suma_mediana_ms": 249.2,
+    "cumple_3s": true
+  }
+}

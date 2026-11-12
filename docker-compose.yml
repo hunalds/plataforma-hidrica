@@ -1,0 +1,103 @@
+# Despliegue reproducible: VPS (DigitalOcean) o servidor institucional de MINAGUAS.
+#   cp .env.example .env   # completar contraseñas y JWT_SECRET; APP_ENV=production
+#   docker compose up -d --build
+#   docker compose exec backend python -m app.cli seed
+#   docker compose exec backend python -m app.cli create-user --email ... --name ... --role GERENCIA
+# Con el perfil "https" se agrega Caddy con certificados automáticos (Let's Encrypt) para DOMINIO.
+name: plataforma-hidrica
+
+services:
+  db:
+    image: postgis/postgis:18-3.6
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-plataforma_hidrica}
+      POSTGRES_USER: ${DB_USER:-hidrica_app}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en .env}
+      TZ: America/Caracas
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    # Sin puertos publicados: la base solo es accesible dentro de la red de Docker
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      DB_HOST: db
+      DB_PORT: 5432
+      ML_MODELS_DIR: /app/ml/models
+      ML_REPORTS_DIR: /app/ml/reports
+      WEB_WORKERS: ${WEB_WORKERS:-2}
+    volumes:
+      - mlmodels:/app/ml/models
+      - mlreports:/app/ml/reports
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: frontend
+      args:
+        VITE_API_URL: /api
+    restart: unless-stopped
+    ports:
+      - "${HTTP_PORT:-8080}:80"
+    depends_on:
+      - backend
+
+  # Respaldo diario de PostgreSQL (retención configurable) en ./backups
+  backup:
+    image: postgis/postgis:18-3.6
+    restart: unless-stopped
+    environment:
+      PGHOST: db
+      PGDATABASE: ${DB_NAME:-plataforma_hidrica}
+      PGUSER: ${DB_USER:-hidrica_app}
+      PGPASSWORD: ${DB_PASSWORD}
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+      BACKUP_HOUR: ${BACKUP_HOUR:-02}
+      TZ: America/Caracas
+    volumes:
+      - ./backups:/backups
+      - ./scripts/backup/backup_db.sh:/usr/local/bin/backup_db.sh:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        while true; do
+          if [ "$$(date +%H)" = "$${BACKUP_HOUR}" ]; then sh /usr/local/bin/backup_db.sh; sleep 3700; fi
+          sleep 600
+        done
+    depends_on:
+      db:
+        condition: service_healthy
+
+  caddy:
+    profiles: ["https"]
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMINIO: ${DOMINIO:?Define DOMINIO en .env para HTTPS}
+    command: caddy reverse-proxy --from ${DOMINIO} --to frontend:80
+    volumes:
+      - caddydata:/data
+    depends_on:
+      - frontend
+
+volumes:
+  pgdata:
+  mlmodels:
+  mlreports:
+  caddydata:

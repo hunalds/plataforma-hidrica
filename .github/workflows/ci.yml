@@ -68,3 +68,50 @@ jobs:
       - run: npx tsc -b --noEmit
       - run: npx vitest run
       - run: npm run build
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    services:
+      postgres:
+        image: postgis/postgis:18-3.6
+        env:
+          POSTGRES_USER: hidrica_app
+          POSTGRES_PASSWORD: ci-password
+          POSTGRES_DB: plataforma_hidrica_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U hidrica_app" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DB_HOST: localhost
+      DB_USER: hidrica_app
+      DB_PASSWORD: ci-password
+      DB_NAME_TEST: plataforma_hidrica_test
+      JWT_SECRET: ci-secreto-de-pruebas-e2e-con-mas-de-32-caracteres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --locked
+        working-directory: backend
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci && npx playwright install --with-deps chromium
+        working-directory: frontend
+      - run: npx playwright test e2e/flujos.spec.ts
+        working-directory: frontend
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: frontend/test-results
+
+  # Valida que las imágenes de producción compilan (P-32: Docker aún no se probó en local)
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cp .env.example .env
+      - run: docker compose build

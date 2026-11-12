@@ -47,10 +47,15 @@ def settings() -> Settings:
 @pytest.fixture
 def app(settings: Settings):
     application = create_app(settings)
-    yield application
     tables = ", ".join(f'"{t.name}"' for t in reversed(Base.metadata.sorted_tables))
-    with application.state.engine.begin() as conn:
-        conn.execute(text(f"TRUNCATE {tables} RESTART IDENTITY CASCADE"))
+
+    def truncate() -> None:
+        with application.state.engine.begin() as conn:
+            conn.execute(text(f"TRUNCATE {tables} RESTART IDENTITY CASCADE"))
+
+    truncate()  # las E2E (Playwright) siembran la misma base de pruebas: se parte de cero
+    yield application
+    truncate()
     application.state.engine.dispose()
 
 
