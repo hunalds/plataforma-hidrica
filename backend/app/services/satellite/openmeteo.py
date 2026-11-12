@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 
+import time
 from collections import defaultdict
 from datetime import date, timedelta
 
@@ -79,7 +80,7 @@ class OpenMeteoSoilProvider(SatelliteProvider):
     ) -> list[SatelliteObservation]:
         points = sample_points(shape(aoi.geometry))
         out: list[SatelliteObservation] = []
-        # Por años para respetar el tamaño de respuesta de la API (horario × puntos)
+        # Por años: el límite gratuito de Open-Meteo pondera puntos × días de cada petición
         cursor = start
         while cursor <= end:
             chunk_end = min(end, date(cursor.year, 12, 31))
@@ -87,34 +88,43 @@ class OpenMeteoSoilProvider(SatelliteProvider):
             cursor = chunk_end + timedelta(days=1)
         return out
 
+    def _get_with_retry(self, params: dict[str, str], attempts: int = 5) -> httpx.Response:
+        """Reintenta ante 429 (límite de uso gratuito) respetando Retry-After o con espera creciente."""
+        for attempt in range(attempts):
+            r = self.client.get(ARCHIVE_URL, params=params)
+            if r.status_code != 429:
+                r.raise_for_status()
+                return r
+            wait = float(r.headers.get("Retry-After", 0)) or min(60 * 2**attempt, 600)
+            self.sleep(wait)
+        r.raise_for_status()
+        return r
+
+    @staticmethod
+    def sleep(seconds: float) -> None:
+        time.sleep(seconds)
+
     def _fetch_chunk(
         self, code: str, points: list[tuple[float, float]], start: date, end: date
     ) -> list[SatelliteObservation]:
-        r = self.client.get(
-            ARCHIVE_URL,
-            params={
-                "latitude": ",".join(str(p[0]) for p in points),
-                "longitude": ",".join(str(p[1]) for p in points),
-                "start_date": start.isoformat(),
-                "end_date": end.isoformat(),
-                "hourly": "soil_moisture_0_to_7cm",
-                "models": "era5_land",
-                "timezone": "America/Caracas",
-            },
-        )
-        r.raise_for_status()
+        params = {
+            "latitude": ",".join(str(p[0]) for p in points),
+            "longitude": ",".join(str(p[1]) for p in points),
+            "start_date": start.isoformat(),
+            "end_date": end.isoformat(),
+            # Media diaria calculada por Open-Meteo: pesa 24 veces menos que la serie horaria
+            "daily": "soil_moisture_0_to_7cm_mean",
+            "models": "era5_land",
+            "timezone": "America/Caracas",
+        }
+        r = self._get_with_retry(params)
         payload = r.json()
         locations = payload if isinstance(payload, list) else [payload]
         daily: dict[date, list[float]] = defaultdict(list)
         for loc in locations:
-            times = loc["hourly"]["time"]
-            values = loc["hourly"]["soil_moisture_0_to_7cm"]
-            per_day: dict[date, list[float]] = defaultdict(list)
-            for t, v in zip(times, values, strict=True):
+            for t, v in zip(loc["daily"]["time"], loc["daily"]["soil_moisture_0_to_7cm_mean"], strict=True):
                 if v is not None:
-                    per_day[date.fromisoformat(t[:10])].append(v)
-            for d, vals in per_day.items():
-                daily[d].append(sum(vals) / len(vals))
+                    daily[date.fromisoformat(t)].append(v)
         out = []
         d = start
         while d <= end:

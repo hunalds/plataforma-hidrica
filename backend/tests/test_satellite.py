@@ -178,16 +178,27 @@ def test_ingest_requires_geometry(db, reservoirs, mocked_providers):
         sat_ingest.run(db, "precipitacion", ["TULE"], date(2025, 1, 1), date(2025, 1, 2))
 
 
-def test_openmeteo_parses_multi_point_response():
+def test_openmeteo_parses_multi_point_daily_response_and_retries_429():
+    calls = {"n": 0}
+
     def handler(request: httpx.Request) -> httpx.Response:
+        calls["n"] += 1
+        if calls["n"] == 1:
+            return httpx.Response(429, headers={"Retry-After": "1"})
         assert request.url.params["models"] == "era5_land"
-        hours = [f"2025-01-01T{h:02d}:00" for h in range(24)] + [f"2025-01-02T{h:02d}:00" for h in range(24)]
-        loc = lambda v: {"hourly": {"time": hours, "soil_moisture_0_to_7cm": [v] * 24 + [None] * 24}}  # noqa: E731
+        assert request.url.params["daily"] == "soil_moisture_0_to_7cm_mean"
+
+        def loc(v):
+            return {"daily": {"time": ["2025-01-01", "2025-01-02"], "soil_moisture_0_to_7cm_mean": [v, None]}}
+
         return httpx.Response(200, json=[loc(0.30), loc(0.20)])
 
     provider = OpenMeteoSoilProvider(client=httpx.Client(transport=httpx.MockTransport(handler)))
+    waits = []
+    provider.sleep = waits.append
     aoi = AreaOfInterest("TULE", json.loads(json.dumps(box(-72.3, 10.8, -72.1, 11.0).__geo_interface__)))
     obs = provider.fetch(aoi, Variable.SOIL_MOISTURE, date(2025, 1, 1), date(2025, 1, 2))
+    assert waits == [1.0]
     assert obs[0].value == pytest.approx(0.25) and obs[0].quality == Quality.GOOD
     assert obs[1].value is None and obs[1].quality == Quality.MISSING
 
