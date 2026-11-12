@@ -1,0 +1,50 @@
+{
+  "_comentario": "Cotas de referencia: entrevista al Director Estadal Zulia de MINAGUAS (2026-11-11), unidades por confirmar (P-01). Los bloques 'sintetico' son parámetros INVENTADOS para generar datos de desarrollo y deben reemplazarse por la curva cota-área-volumen oficial (P-03, P-04).",
+  "embalses": [
+    {
+      "codigo": "TULE",
+      "nombre": "Tulé",
+      "inicio_registros": "2005-01-01",
+      "cota_normal": 33.40,
+      "cota_volumen_muerto": 26.60,
+      "sintetico": {
+        "volumen_normal_hm3": 180.0,
+        "cota_fondo": 21.20,
+        "exponente_curva": 2.2,
+        "caudal_entrada_medio_m3s": 6.4,
+        "extraccion_media_m3s": 4.2,
+        "gasto_ecologico_m3s": 0.4
+      }
+    },
+    {
+      "codigo": "MANUELOTE",
+      "nombre": "Manuelote",
+      "inicio_registros": "2005-01-01",
+      "cota_normal": 48.00,
+      "cota_volumen_muerto": 36.10,
+      "sintetico": {
+        "volumen_normal_hm3": 260.0,
+        "cota_fondo": 27.00,
+        "exponente_curva": 2.3,
+        "caudal_entrada_medio_m3s": 7.6,
+        "extraccion_media_m3s": 5.0,
+        "gasto_ecologico_m3s": 0.5
+      }
+    },
+    {
+      "codigo": "TRES_RIOS",
+      "nombre": "Tres Ríos",
+      "inicio_registros": "2008-01-01",
+      "cota_normal": 180.00,
+      "cota_volumen_muerto": 139.50,
+      "sintetico": {
+        "volumen_normal_hm3": 320.0,
+        "cota_fondo": 110.00,
+        "exponente_curva": 2.4,
+        "caudal_entrada_medio_m3s": 7.5,
+        "extraccion_media_m3s": 5.5,
+        "gasto_ecologico_m3s": 0.6
+      }
+    }
+  ]
+}

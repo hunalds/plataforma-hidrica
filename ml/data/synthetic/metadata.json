@@ -1,0 +1,26 @@
+{
+  "SINTETICO": true,
+  "advertencia": "Datos generados artificialmente. No son mediciones de MINAGUAS.",
+  "generador": "ml/src/synthetic.py",
+  "version_generador": "1.0.0",
+  "semilla": 2026,
+  "fecha_fin": "2026-10-31",
+  "filas": 22827,
+  "embalses": {
+    "MANUELOTE": {
+      "desde": "2005-01-01",
+      "hasta": "2026-10-31",
+      "filas": 7974
+    },
+    "TRES_RIOS": {
+      "desde": "2008-01-01",
+      "hasta": "2026-10-31",
+      "filas": 6879
+    },
+    "TULE": {
+      "desde": "2005-01-01",
+      "hasta": "2026-10-31",
+      "filas": 7974
+    }
+  }
+}

@@ -9,6 +9,9 @@ Cada valor de esta lista es **configurable** en el sistema. Mientras no se confi
 - [ ] **P-04** Capacidad útil de cada embalse, en hm³.
 - [ ] **P-05** Formato real de los históricos (Excel, SQL) y nombres de las columnas, para ajustar la plantilla de importación.
 - [ ] **P-06** Acceso a la base SQL existente: motor, esquema y permisos de lectura.
+- [ ] **P-19** Diferencia entre "caudal de salida/extracción" y "captación" en el registro diario. Hoy la plantilla los trata como columnas separadas y el dataset sintético les pone el mismo valor.
+- [ ] **P-20** Hora oficial de la lectura diaria del limnímetro. El dataset sintético asume las 08:00.
+- [ ] **P-21** Parámetros sintéticos de `ml/config/embalses.json` (volumen al nivel normal, cota de fondo, caudales medios): se deben reemplazar por los valores oficiales.
 
 ## Geometrías
 - [ ] **P-07** Polígonos (GeoJSON) del espejo de agua de cada embalse.

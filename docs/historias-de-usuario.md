@@ -45,7 +45,7 @@ Estados: ⬜ pendiente · 🔄 en curso · ✅ terminada
   - La página de estado muestra "API conectada" o "Sin conexión".
   - Las pruebas de `vitest` pasan.
 
-### HU-0.5 · Dataset sintético ⬜
+### HU-0.5 · Dataset sintético ✅
 - **Rol:** analista
 - **Historia:** Como analista, quiero un dataset sintético realista de los tres embalses para desarrollar sin los datos oficiales.
 - **Prioridad:** Alta · **Estimación:** 2
