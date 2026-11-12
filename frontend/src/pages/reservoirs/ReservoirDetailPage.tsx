@@ -10,6 +10,7 @@ import { Alert, Button, Card, EmptyState, PageHeader, Spinner, TextField } from 
 import { fmt } from '../../lib/format'
 import { es } from '../../i18n/es'
 import { BalanceSection, RecentMeasurements, StatusCard } from './OperationSections'
+import { ForecastSection } from './ForecastSection'
 import { SatelliteCard } from './SatelliteCard'
 
 const THRESHOLD_FIELDS: { key: keyof Omit<Thresholds, 'updated_at'>; label: string; hint: string }[] = [
@@ -212,6 +213,7 @@ export function ReservoirDetailPage() {
         <div className="space-y-6">
           <PageHeader title={`Embalse ${r.name}`} description={r.description ?? undefined} />
           <StatusCard code={r.code} />
+          <ForecastSection code={r.code} />
           <SatelliteCard code={r.code} />
           <RecentMeasurements code={r.code} />
           <BalanceSection code={r.code} />

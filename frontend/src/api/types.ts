@@ -258,3 +258,77 @@ export interface SatelliteSource {
   resolucion: string
   atribucion: string
 }
+
+// --- Iteración 4: predicción ---
+
+export interface ForecastDay {
+  day: string
+  volume_p10: number
+  volume_p50: number
+  volume_p90: number
+  level_p10: number
+  level_p50: number
+  level_p90: number
+}
+
+export interface ForecastHorizon {
+  horizon_days: number
+  date: string
+  level_p50: number
+  level_p10: number
+  level_p90: number
+  volume_p50: number
+  useful_volume_p50: number
+  availability_pct_p50: number | null
+  reserve_days_p50: number | null
+  spill_probability: number
+  will_spill: boolean
+}
+
+export interface ForecastProbability {
+  threshold: string
+  label: string
+  level: number
+  direction: 'bajo' | 'sobre'
+  horizon_days: number
+  probability: number
+}
+
+export interface Forecast {
+  reservoir_code: string
+  origin: string
+  model: { id: number; kind: string; version: string; pinned: boolean; score_mae_hm3: number; data_source: string; trained_at: string }
+  days: ForecastDay[]
+  horizons: ForecastHorizon[]
+  probabilities: ForecastProbability[]
+  importance: { variable: string; descripcion: string; peso: number }[]
+  thresholds: Record<string, number>
+  normal_level: number
+}
+
+export interface MLModelInfo {
+  id: number
+  reservoir_code: string
+  kind: string
+  version_tag: string
+  data_from: string
+  data_to: string
+  n_days: number
+  data_source: string
+  test_years: number[]
+  params: Record<string, unknown>
+  metrics: { horizonte: number; MAE_hm3: number; RMSE_hm3: number; 'MAPE_%': number; R2: number; MAE_cota_m: number; 'cobertura_80_%': number }[]
+  importance: Record<string, number> | null
+  score: number
+  train_seconds: number
+  pinned: boolean
+  active: boolean
+  created_at: string
+}
+
+export const MODEL_LABELS: Record<string, string> = {
+  persistencia: 'Persistencia (línea base)',
+  estacional: 'Estacional (línea base)',
+  xgboost: 'XGBoost',
+  lstm: 'LSTM (red neuronal)',
+}

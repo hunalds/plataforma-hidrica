@@ -11,6 +11,7 @@ export const es = {
     reservoirs: 'Embalses',
     dailyEntry: 'Registro diario',
     import: 'Importar datos',
+    models: 'Modelos de predicción',
     satellite: 'Datos satelitales',
     users: 'Usuarios',
     audit: 'Bitácora',

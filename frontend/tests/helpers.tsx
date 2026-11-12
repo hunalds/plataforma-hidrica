@@ -12,8 +12,8 @@ type Handler = (body: unknown, url: URL) => { status?: number; body: unknown }
 export type Routes = Record<string, Handler | unknown>
 
 const PERMISSIONS: Record<Role, Me['permissions']> = {
-  GERENCIA: { M1_auditoria: 'READ', M2_usuarios: 'MANAGE', M3_embalses: 'READ', M4_ingesta: 'READ', M5_satelite: 'READ', M7_panel: 'READ', M11_ayuda: 'READ', M12_calculos: 'READ' },
-  INGENIERO: { M3_embalses: 'MANAGE', M4_ingesta: 'MANAGE', M5_satelite: 'MANAGE', M7_panel: 'READ', M11_ayuda: 'READ', M12_calculos: 'MANAGE' },
+  GERENCIA: { M1_auditoria: 'READ', M2_usuarios: 'MANAGE', M3_embalses: 'READ', M4_ingesta: 'READ', M5_satelite: 'READ', M6_prediccion: 'READ', M7_panel: 'READ', M11_ayuda: 'READ', M12_calculos: 'READ' },
+  INGENIERO: { M3_embalses: 'MANAGE', M4_ingesta: 'MANAGE', M5_satelite: 'MANAGE', M6_prediccion: 'MANAGE', M7_panel: 'READ', M11_ayuda: 'READ', M12_calculos: 'MANAGE' },
   OPERADOR: { M3_embalses: 'READ', M4_ingesta: 'MANAGE', M7_panel: 'READ', M11_ayuda: 'READ', M12_calculos: 'READ' },
 }
 
@@ -130,6 +130,7 @@ export function renderApp(path: string, routesMock: Routes = {}, as?: Me) {
     'GET /reservoirs/TULE/status': tuleStatus,
     'GET /reservoirs/TULE/measurements': [],
     'GET /reservoirs/TULE/satellite/summary': tuleSatellite,
+    'GET /reservoirs/TULE/forecast': () => ({ status: 404, body: { detail: { code: 'NO_FORECAST', message: 'Aún no hay modelos entrenados para este embalse.' } } }),
     'GET /reservoirs/TULE/balance': { reservoir_code: 'TULE', date_from: '2026-10-01', date_to: '2026-10-31', days: [], totals: {}, note: '' },
     ...routesMock,
   }

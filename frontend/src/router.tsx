@@ -12,6 +12,7 @@ import { ImportPage } from './pages/ingest/ImportPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { ReservoirDetailPage } from './pages/reservoirs/ReservoirDetailPage'
 import { ReservoirsPage } from './pages/reservoirs/ReservoirsPage'
+import { ModelsPage } from './pages/ml/ModelsPage'
 import { SatellitePage } from './pages/satellite/SatellitePage'
 import { StatusPage } from './pages/StatusPage'
 
@@ -50,6 +51,10 @@ export const routes: RouteObject[] = [
               { path: 'registro', element: <DailyEntryPage /> },
               { element: <RequireImporter />, children: [{ path: 'importar', element: <ImportPage /> }] },
             ],
+          },
+          {
+            element: <RequirePermission module={MODULES.prediction} />,
+            children: [{ path: 'modelos', element: <ModelsPage /> }],
           },
           {
             element: <RequirePermission module={MODULES.satellite} />,
