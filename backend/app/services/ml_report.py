@@ -116,7 +116,7 @@ def write_report(session: Session, settings: Settings) -> Path:
         if xgb and xgb.importance:
             from hidrica_ml.features import FEATURE_LABELS
 
-            top = list(xgb.importance.items())[:5]
+            top = sorted(xgb.importance.items(), key=lambda kv: -kv[1])[:5]  # JSONB no conserva el orden
             lines += [
                 "",
                 "Variables más importantes (XGBoost, ganancia): "
