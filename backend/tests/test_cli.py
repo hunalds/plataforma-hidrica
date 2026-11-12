@@ -22,8 +22,14 @@ def test_demo_users_and_create_user(db, app, capsys):
     users = db.scalars(select(User)).all()
     assert len(users) == 3 and all(u.must_change_password for u in users)
 
-    assert main(["create-user", "--email", "Nuevo@Hidrica-Zulia.com", "--name", "Nuevo", "--role", "INGENIERO"]) == 0
-    assert main(["create-user", "--email", "nuevo@hidrica-zulia.com", "--name", "Otro", "--role", "OPERADOR"]) == 1
+    assert (
+        main(["create-user", "--email", "Nuevo@Hidrica-Zulia.com", "--name", "Nuevo", "--role", "INGENIERO"])
+        == 0
+    )
+    assert (
+        main(["create-user", "--email", "nuevo@hidrica-zulia.com", "--name", "Otro", "--role", "OPERADOR"])
+        == 1
+    )
 
 
 def test_load_synthetic_curves(db, app, capsys):

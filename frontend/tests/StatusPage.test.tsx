@@ -1,26 +1,8 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { createMemoryRouter, RouterProvider } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
 
-import { routes } from '../src/router'
-
-function renderAt(path = '/') {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  const router = createMemoryRouter(routes, { initialEntries: [path] })
-  return render(
-    <QueryClientProvider client={client}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>,
-  )
-}
-
-function mockFetch(status: number, body: unknown) {
-  return vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-    new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } }),
-  )
-}
+import { makeMe, renderApp, tokenResponse } from './helpers'
 
 const okBody = {
   status: 'ok',
@@ -31,42 +13,56 @@ const okBody = {
   detail: null,
 }
 
-describe('Página de estado', () => {
+describe('Página de estado (HU-0.4)', () => {
   it('muestra "API conectada" y la versión de PostGIS cuando /health responde 200', async () => {
-    const fetchSpy = mockFetch(200, okBody)
-    renderAt('/')
+    renderApp('/estado', { 'GET /health': okBody }, makeMe('OPERADOR'))
     expect(await screen.findByText('API conectada')).toBeInTheDocument()
     expect(screen.getByText('3.6.2')).toBeInTheDocument()
-    expect(fetchSpy).toHaveBeenCalledWith(expect.stringMatching(/\/health$/), expect.anything())
   })
 
   it('muestra el estado degradado cuando la base de datos no responde (503)', async () => {
-    mockFetch(503, { ...okBody, status: 'degraded', database: 'error', postgis: null, detail: 'No se pudo conectar a la base de datos' })
-    renderAt('/')
+    renderApp(
+      '/estado',
+      {
+        'GET /health': () => ({
+          status: 503,
+          body: { ...okBody, status: 'degraded', database: 'error', postgis: null, detail: 'No se pudo conectar a la base de datos' },
+        }),
+      },
+      makeMe('OPERADOR'),
+    )
     expect(await screen.findByText('API activa, base de datos no disponible')).toBeInTheDocument()
     expect(screen.getByText('No se pudo conectar a la base de datos')).toBeInTheDocument()
     expect(screen.getByText('Con fallas')).toBeInTheDocument()
   })
 
   it('muestra "Sin conexión" si el servidor no responde y permite reintentar', async () => {
-    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('Failed to fetch'))
-    renderAt('/')
+    const { fetchSpy } = renderApp('/estado', {}, makeMe('OPERADOR'))
+    const original = fetchSpy.getMockImplementation()!
+    let fail = true
+    fetchSpy.mockImplementation(async (input, init) => {
+      if (String(input).endsWith('/health')) {
+        if (fail) throw new TypeError('Failed to fetch')
+        return new Response(JSON.stringify(okBody), { status: 200 })
+      }
+      if (String(input).endsWith('/auth/refresh')) return new Response(JSON.stringify(tokenResponse(makeMe('OPERADOR'))))
+      return original(input, init)
+    })
     expect(await screen.findByText('Sin conexión con la API')).toBeInTheDocument()
 
-    fetchSpy.mockResolvedValue(new Response(JSON.stringify(okBody), { status: 200 }))
+    fail = false
     await userEvent.click(screen.getByRole('button', { name: /reintentar/i }))
     expect(await screen.findByText('API conectada')).toBeInTheDocument()
+    vi.restoreAllMocks()
   })
 
-  it('incluye un enlace para saltar al contenido (accesibilidad)', () => {
-    mockFetch(200, okBody)
-    renderAt('/')
-    expect(screen.getByRole('link', { name: 'Saltar al contenido principal' })).toHaveAttribute('href', '#contenido')
+  it('incluye un enlace para saltar al contenido (accesibilidad)', async () => {
+    renderApp('/estado', { 'GET /health': okBody }, makeMe('OPERADOR'))
+    expect(await screen.findByRole('link', { name: 'Saltar al contenido principal' })).toHaveAttribute('href', '#contenido')
   })
 
-  it('muestra una página 404 en español para rutas desconocidas', () => {
-    mockFetch(200, okBody)
-    renderAt('/no-existe')
-    expect(screen.getByRole('heading', { name: 'Página no encontrada' })).toBeInTheDocument()
+  it('muestra una página 404 en español para rutas desconocidas', async () => {
+    renderApp('/no-existe', {}, makeMe('OPERADOR'))
+    expect(await screen.findByRole('heading', { name: 'Página no encontrada' })).toBeInTheDocument()
   })
 })

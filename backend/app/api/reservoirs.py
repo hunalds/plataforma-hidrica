@@ -122,7 +122,8 @@ def list_reservoirs(session: DbSession, user: Reader) -> list[ReservoirOut]:
 @router.get(
     "/curve-template.csv", response_class=PlainTextResponse, summary="Plantilla CSV de curva cota–volumen"
 )
-def curve_template(_: Reader) -> PlainTextResponse:
+def curve_template() -> PlainTextResponse:
+    """Pública: es solo una plantilla vacía, sin datos de la institución."""
     return PlainTextResponse(
         TEMPLATE_CSV,
         media_type="text/csv",

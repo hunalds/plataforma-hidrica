@@ -254,5 +254,5 @@ def test_invalid_curve_upload_returns_row_errors(client, auth_headers, reservoir
 def test_only_ingeniero_uploads_curves_and_template_is_downloadable(client, auth_headers, reservoirs):
     op = auth_headers(Role.OPERADOR, reservoirs=["TULE"])
     assert _upload(client, op, "2020-01-01").status_code == 403
-    t = client.get("/reservoirs/curve-template.csv", headers=op)
+    t = client.get("/reservoirs/curve-template.csv")  # pública
     assert t.status_code == 200 and t.text.startswith("cota_msnm,area_km2,volumen_hm3")
