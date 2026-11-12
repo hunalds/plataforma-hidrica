@@ -27,7 +27,7 @@ Estados: ⬜ pendiente · 🔄 en curso · ✅ terminada
   - Un script crea el usuario `hidrica_app`, las bases `plataforma_hidrica` y `plataforma_hidrica_test`, y la extensión PostGIS. Pide la contraseña de `postgres` sin guardarla.
   - `uv sync` instala las dependencias del backend con Python 3.12.
 
-### HU-0.3 · Backend base con `/health` ⬜
+### HU-0.3 · Backend base con `/health` ✅
 - **Rol:** sistema
 - **Historia:** Como sistema, quiero un backend FastAPI con configuración, logs estructurados y `/health` para monitorear el servicio.
 - **Prioridad:** Alta · **Estimación:** 2

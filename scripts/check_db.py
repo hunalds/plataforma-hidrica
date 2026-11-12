@@ -50,7 +50,7 @@ def check(dbname: str, env: dict[str, str]) -> bool:
 
 
 def main() -> int:
-    # La consola de Windows usa cp1252; los mensajes de PostgreSQL en español pueden traer caracteres inválidos
+    # La consola de Windows usa cp1252; los mensajes de PostgreSQL pueden traer caracteres inválidos
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     env = {**load_env(ROOT / ".env"), **{k: v for k, v in os.environ.items() if k.startswith("DB_")}}
     dbs = [env.get("DB_NAME", "plataforma_hidrica"), env.get("DB_NAME_TEST", "plataforma_hidrica_test")]
