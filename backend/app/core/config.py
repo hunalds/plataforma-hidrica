@@ -6,7 +6,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field, SecretStr, field_validator
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import URL
 
@@ -40,10 +40,39 @@ class Settings(BaseSettings):
     # Fuente satelital activa (ver app/services/satellite/registry.py)
     satellite_provider: str = "mock"
 
+    # --- Seguridad (M1) ---
+    # En pruebas se acepta un secreto por defecto; en desarrollo/producción debe venir del .env
+    jwt_secret: SecretStr = SecretStr("solo-para-pruebas-no-usar-en-produccion-0123456789")
+    jwt_algorithm: str = "HS256"
+    jwt_access_minutes: int = 15
+    jwt_refresh_days: int = 7
+    session_idle_minutes: int = 30  # cierre de sesión por inactividad (refresh sin uso)
+    login_max_attempts: int = 5  # intentos fallidos antes del bloqueo temporal
+    login_lockout_minutes: int = 15
+    login_rate_limit_per_minute: int = 10  # por IP
+    password_reset_minutes: int = 30
+    frontend_url: str = "http://localhost:5173"  # para armar el enlace de recuperación
+
+    # --- Correo (M1 recuperación de contraseña; M9 alertas) ---
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: SecretStr = SecretStr("")
+    smtp_from: str = ""
+
     @field_validator("log_level")
     @classmethod
     def _upper(cls, value: str) -> str:
         return value.upper()
+
+    @model_validator(mode="after")
+    def _strong_secret_outside_tests(self) -> Settings:
+        secret = self.jwt_secret.get_secret_value()
+        if self.app_env != "test" and (
+            len(secret) < 32 or secret.startswith(("solo-para-pruebas", "genera-"))
+        ):
+            raise ValueError("JWT_SECRET debe definirse en .env con al menos 32 caracteres aleatorios")
+        return self
 
     @property
     def effective_db_name(self) -> str:
