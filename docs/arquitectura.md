@@ -1,6 +1,6 @@
 # Arquitectura
 
-Documento vivo: se actualiza al cerrar cada iteración. **Estado: cierre de la Iteración 0 (2026-11-12).** Los bloques marcados *(previsto)* todavía no existen.
+Documento vivo: se actualiza al cerrar cada iteración. **Estado: cierre de la Iteración 1 (2026-11-12).** Los bloques marcados *(previsto)* todavía no existen.
 
 ## 1. Arquitectura lógica (componentes)
 
@@ -19,8 +19,8 @@ flowchart LR
     end
 
     subgraph Backend["Backend · FastAPI (Python 3.12)"]
-        API[Routers<br/>/health ✅ · auth · embalses · ingesta<br/>predicciones · alertas · reportes]
-        SVC[Servicios<br/>hydro_calcs · alertas · reportes <i>(previsto)</i>]
+        API[Routers<br/>/health · /auth · /users · /audit · /reservoirs ✅<br/>ingesta · predicciones · alertas · reportes <i>(previsto)</i>]
+        SVC[Servicios<br/>auditoría · sesiones · correo · curvas ✅<br/>hydro_calcs · alertas · reportes <i>(previsto)</i>]
         SAT[SatelliteProvider ✅<br/>mock · chirps · era5_land · copernicus · planetary_computer]
         JOBS[Tareas manuales<br/>BackgroundTasks <i>(previsto)</i>]
     end
@@ -89,55 +89,143 @@ Si las normativas de la institución lo exigen (P-16), el frontend también se p
 
 ## 3. Modelo de datos (entidad-relación)
 
-En la Iteración 0 la base solo tiene PostGIS activado (migración `0001_postgis`). Este diagrama es el **modelo previsto** para las iteraciones 1 a 4 y se irá ajustando:
+Tablas **implementadas** en la Iteración 1 (migración `0002_auth_reservoirs`):
 
 ```mermaid
 erDiagram
-    USUARIO ||--o{ USUARIO_EMBALSE : "asignado a"
-    EMBALSE ||--o{ USUARIO_EMBALSE : ""
-    EMBALSE ||--o{ UMBRAL : tiene
-    EMBALSE ||--o{ CURVA_COTA_VOLUMEN : "versiones"
-    EMBALSE ||--o{ MEDICION_DIARIA : registra
-    EMBALSE ||--o{ OBSERVACION_SATELITAL : "zona de interés"
-    EMBALSE ||--o{ PREDICCION : ""
-    MODELO_ML ||--o{ PREDICCION : genera
-    EMBALSE ||--o{ ALERTA : ""
-    USUARIO ||--o{ AUDITORIA : realiza
+    USERS ||--o{ USER_RESERVOIR : "asignado a"
+    RESERVOIRS ||--o{ USER_RESERVOIR : ""
+    RESERVOIRS ||--|| THRESHOLDS : tiene
+    RESERVOIRS ||--o{ ELEVATION_CURVES : "versiones"
+    ELEVATION_CURVES ||--o{ ELEVATION_CURVE_POINTS : puntos
+    USERS ||--o{ REFRESH_TOKENS : sesiones
+    USERS ||--o{ PASSWORD_RESET_TOKENS : recuperación
+    USERS ||--o{ AUDIT_LOG : realiza
 
-    EMBALSE {
-        string codigo PK
-        string nombre
-        geometry poligono
-        geometry cuenca
-        float cota_normal
-        float cota_volumen_muerto
-        date inicio_registros
+    USERS {
+        int id PK
+        string email UK
+        string full_name
+        enum role "GERENCIA | INGENIERO | OPERADOR"
+        string password_hash "Argon2id"
+        bool is_active
+        bool must_change_password
+        int failed_attempts
+        timestamptz locked_until
+        int token_version
     }
-    MEDICION_DIARIA {
-        string embalse FK
-        date fecha
-        time hora
-        float cota_msnm
-        float volumen_hm3
-        float caudal_entrada_m3s
-        float caudal_salida_m3s
-        float gasto_ecologico_m3s
-        float apertura_compuertas_pct
-        float captacion_m3s
-        string observaciones
+    RESERVOIRS {
+        string code PK "TULE | MANUELOTE | TRES_RIOS"
+        string name
+        string basin
+        date records_start
+        float normal_level
+        float dead_level
+        geometry geom "MultiPolygon 4326"
+        geometry basin_geom "MultiPolygon 4326"
     }
-    OBSERVACION_SATELITAL {
-        string area_codigo
-        date fecha
-        string variable
-        float valor
-        string fuente
-        string calidad
-        float nubosidad_pct
+    THRESHOLDS {
+        string reservoir_code PK,FK
+        float low_critical
+        float low_alert
+        float high_alert
+        float spill_level
+        int updated_by FK
+    }
+    ELEVATION_CURVES {
+        int id PK
+        string reservoir_code FK
+        int version
+        date valid_from
+        string source_filename
+    }
+    ELEVATION_CURVE_POINTS {
+        int curve_id FK
+        float elevation
+        float area_km2
+        float volume_hm3
+    }
+    REFRESH_TOKENS {
+        uuid id PK "jti"
+        int user_id FK
+        timestamptz expires_at
+        timestamptz last_used_at
+        timestamptz revoked_at
+    }
+    PASSWORD_RESET_TOKENS {
+        int id PK
+        int user_id FK
+        string token_hash "SHA-256"
+        timestamptz expires_at
+        timestamptz used_at
+    }
+    AUDIT_LOG {
+        int id PK
+        timestamptz created_at
+        int user_id FK
+        string action
+        string entity
+        string entity_id
+        jsonb old_value
+        jsonb new_value
+        string ip
     }
 ```
 
-## 4. Decisiones de arquitectura
+Previstas para las próximas iteraciones: `MEDICION_DIARIA` (M4), `OBSERVACION_SATELITAL` (M5), `MODELO_ML` y `PREDICCION` (M6), `ALERTA` (M9).
+
+## 4. Casos de uso (Iteración 1)
+
+```mermaid
+flowchart LR
+    G([Gerencia])
+    I([Ingeniero])
+    O([Operador])
+    subgraph Sistema["Plataforma Hídrica"]
+        UC1((Iniciar / cerrar sesión))
+        UC2((Recuperar contraseña))
+        UC3((Cambiar contraseña))
+        UC4((Gestionar usuarios))
+        UC5((Consultar bitácora))
+        UC6((Consultar embalses))
+        UC7((Definir umbrales))
+        UC8((Cargar curva cota–volumen))
+        UC9((Cargar polígono))
+    end
+    G --- UC1 & UC2 & UC3 & UC4 & UC5 & UC6
+    I --- UC1 & UC2 & UC3 & UC6 & UC7 & UC8 & UC9
+    O --- UC1 & UC2 & UC3 & UC6
+```
+
+## 5. Secuencia: inicio de sesión con primer acceso
+
+```mermaid
+sequenceDiagram
+    actor U as Usuario
+    participant F as Frontend
+    participant A as API /auth
+    participant D as PostgreSQL
+    U->>F: correo + contraseña temporal
+    F->>A: POST /auth/login
+    A->>A: límite por IP (10/min)
+    A->>D: buscar usuario, verificar Argon2id
+    alt contraseña incorrecta
+        A->>D: failed_attempts + 1 (5 → bloqueo 15 min) · bitácora
+        A-->>F: 401 / 423 con mensaje en español
+    else correcta
+        A->>D: guardar refresh token (jti) · bitácora login.ok
+        A-->>F: access (15 min) + refresh (7 días) + usuario y permisos
+        F->>F: must_change_password → /cambiar-clave
+        U->>F: nueva contraseña
+        F->>A: POST /auth/change-password
+        A->>D: nuevo hash · token_version + 1 · revocar sesiones
+        A-->>F: tokens nuevos
+        F->>A: GET /reservoirs (Bearer)
+        A-->>F: embalses visibles según el rol
+    end
+```
+
+## 6. Decisiones de arquitectura
 
 | Decisión | Razón |
 |---|---|
@@ -146,3 +234,8 @@ erDiagram
 | `SatelliteProvider` abstracto | Cambiar de fuente sin tocar la ingesta ni el ML (C-10, C-12). |
 | Plantilla de importación definida en un solo lugar (`ml/src/schema.py`) | El dataset sintético y los datos reales comparten el mismo formato. |
 | Variables `VITE_*` desde el `.env` de la raíz | Una sola fuente de configuración; Vite no expone al navegador las variables sin prefijo. |
+| `token_version` en el usuario | Cambiar la contraseña, desactivar o cambiar el rol invalida al instante todos los tokens emitidos, sin listas negras. |
+| Rotación de refresh tokens con detección de reuso | Si alguien roba un token de renovación y lo usa, la segunda vez se detecta y se cierran todas las sesiones. |
+| Permisos en una matriz declarativa (`core/permissions.py`) | Refleja literalmente la tabla de la sección 6. El backend la aplica con `require()` y el frontend la recibe en `/auth/me`. |
+| Errores con `{"detail": {"code", "message"}}` | El frontend muestra el mensaje en español y decide según el código (p. ej. `PASSWORD_CHANGE_REQUIRED`). |
+| Curvas versionadas por fecha de vigencia | Los cálculos históricos usan la curva que regía en cada fecha, no la última cargada. |

@@ -28,6 +28,11 @@ Cada valor de esta lista es **configurable** en el sistema. Mientras no se confi
 - [ ] **P-14** Confirmar desde la **red de MINAGUAS** el acceso a CHIRPS, Copernicus y Planetary Computer. Desde la red de los autores ya funcionan todas (ver `docs/evidencias/HU-0.6-fuentes-satelitales.md`).
 - [ ] **P-15** Producto de humedad del suelo: ERA5-Land (0,1°) o SMAP (9 km, desde 2015). Justificar la elección en la tesis.
 
+## Seguridad (validar con la institución)
+- [ ] **P-22** Dónde guardar el token de renovación en el navegador. Hoy está en `localStorage`; en producción conviene una cookie `httpOnly`, pero hay que confirmar los dominios del frontend y del backend (Iteración 7).
+- [ ] **P-23** Política de contraseñas y parámetros de bloqueo (10 caracteres, 5 intentos, 15 min, sesión inactiva 30 min). Revisar si las normativas institucionales piden otros valores.
+- [ ] **P-24** Proveedor SMTP oficial para el envío de correos (recuperación y alertas).
+
 ## Institucional
 - [ ] **P-16** Normativas institucionales sobre el almacenamiento de datos: dónde deben residir los datos y por cuánto tiempo se retienen.
 - [ ] **P-17** Proveedor de SMS y WhatsApp para las alertas.

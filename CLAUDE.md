@@ -56,5 +56,10 @@ scripts/   utilidades (base de datos, verificaciones)
 - ARCO-ERA5 es demasiado lento (~7 min/día). Para la humedad del suelo se usa ERA5-Land del CDS (C-12).
 
 ## Estado
-- **Iteración 0 (Exploración): ✅ cerrada el 2026-11-12.** HU-0.1 a HU-0.7 completas. Pruebas: 19 en el backend, 12 en ml y 5 en el frontend.
-- **Siguiente:** Iteración 1 (M1 autenticación, M2 usuarios y roles, M3 embalses), a la espera del plan y la aprobación.
+- **Iteración 0 (Exploración): ✅ cerrada el 2026-11-12.**
+- **Iteración 1 (M1, M2, M3): ✅ cerrada el 2026-11-12.** Pruebas: 93 en el backend, 12 en ml y 23 en el frontend.
+  - Usuarios de demostración: `uv run python -m app.cli demo-users` (contraseñas temporales; dominio `hidrica-zulia.com`, ficticio).
+  - Curvas **sintéticas** cargadas en la base de desarrollo con `app.cli load-synthetic-curves`.
+  - Pruebas del frontend: `tests/setup.ts` quita el `signal` de `Request` (incompatibilidad entre jsdom y undici con React Router).
+  - El validador de correos rechaza los dominios `.test`, `.local` y `.example`: en pruebas se usa `@hidrica-zulia.com`.
+- **Siguiente:** Iteración 2 (M4 ingesta hidrológica + M12 cálculos operativos), a la espera del plan y la aprobación.
