@@ -40,4 +40,4 @@ scripts/   utilidades (base de datos, verificaciones)
 - Cómo reinstalarlas: `docs/herramientas-ia.md`.
 
 ## Estado
-- **Iteración 0 (Exploración):** en curso. HU-0.1 completada.
+- **Iteración 0 (Exploración):** en curso. HU-0.1 y HU-0.2 completadas. BD: `scripts/db/setup_db.ps1` + `scripts/check_db.py`. uv está en `%LOCALAPPDATA%/Microsoft/WinGet/Packages/astral-sh.uv_*` (no siempre en el PATH de la terminal).

@@ -19,7 +19,7 @@ Estados: ⬜ pendiente · 🔄 en curso · ✅ terminada
   - `.env.example` con todas las variables previstas.
   - `CLAUDE.md`, `docs/PENDIENTES.md`, `docs/CAMBIOS-PROMPT.md` y `docs/herramientas-ia.md` creados.
 
-### HU-0.2 · Entorno local de base de datos y Python ⬜
+### HU-0.2 · Entorno local de base de datos y Python ✅
 - **Rol:** desarrollador
 - **Historia:** Como desarrollador, quiero crear la base de datos con PostGIS y el entorno Python 3.12 con un script para que cualquiera pueda reproducir el entorno.
 - **Prioridad:** Alta · **Estimación:** 1
