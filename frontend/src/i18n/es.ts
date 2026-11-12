@@ -9,6 +9,8 @@ export const es = {
   nav: {
     label: 'Navegación principal',
     reservoirs: 'Embalses',
+    dailyEntry: 'Registro diario',
+    import: 'Importar datos',
     users: 'Usuarios',
     audit: 'Bitácora',
     status: 'Estado del sistema',

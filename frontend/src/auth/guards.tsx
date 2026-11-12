@@ -30,3 +30,10 @@ export function AnonymousOnly() {
   if (status === 'authenticated') return <Navigate to="/" replace />
   return <Outlet />
 }
+
+/** Importar archivos: el Operador tiene M4 = gestionar, pero "solo registro manual" (matriz §6). */
+export function RequireImporter() {
+  const { user } = useAuth()
+  if (user?.role === 'OPERADOR') return <Navigate to="/registro" replace />
+  return <Outlet />
+}

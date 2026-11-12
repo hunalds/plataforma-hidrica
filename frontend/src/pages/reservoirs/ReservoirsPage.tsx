@@ -1,77 +1,82 @@
 import { CaretRight, MapPinSimpleArea, Warning } from '@phosphor-icons/react'
 import { Link } from 'react-router'
 
-import { useReservoirs } from '../../api/reservoirs'
+import { useReservoirs, useStatuses } from '../../api/reservoirs'
+import type { Reservoir, ReservoirStatus } from '../../api/types'
+import { AvailabilityBar, LastDataLine, StatusMetrics, TrafficLightBadge } from '../../components/status'
 import { Alert, EmptyState, PageHeader, Spinner } from '../../components/ui'
-import { fmt } from '../../lib/format'
-import { es } from '../../i18n/es'
 
-function Stat({ label, value, title }: { label: string; value: string; title?: string }) {
+function Chip({ children, tone = 'alert' }: { children: React.ReactNode; tone?: 'alert' | 'muted' }) {
+  const cls = tone === 'alert' ? 'bg-status-alert-bg text-status-alert' : 'bg-muted text-muted-foreground'
+  return <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-sm font-semibold ${cls}`}>{children}</span>
+}
+
+function ReservoirCard({ r, s }: { r: Reservoir; s: ReservoirStatus | undefined }) {
   return (
-    <div title={title}>
-      <dt className="text-sm text-muted-foreground">{label}</dt>
-      <dd className="font-heading text-lg font-semibold tabular-nums">{value}</dd>
-    </div>
+    <Link
+      to={`/embalses/${r.code}`}
+      className="group flex h-full flex-col gap-4 rounded-lg border border-border bg-surface p-5 shadow-sm transition-shadow hover:shadow-md"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h2 className="text-xl font-semibold">{r.name}</h2>
+          {s && <LastDataLine s={s} />}
+        </div>
+        <CaretRight size={22} aria-hidden="true" className="mt-1 shrink-0 text-muted-foreground group-hover:text-accent" />
+      </div>
+      {s && (
+        <>
+          <div className="flex flex-wrap items-center gap-2">
+            <TrafficLightBadge status={s} />
+            {!s.thresholds_defined && <span className="text-xs text-muted-foreground">(umbrales por definir)</span>}
+          </div>
+          <AvailabilityBar pct={s.availability_pct} />
+          <StatusMetrics s={s} compact />
+        </>
+      )}
+      <div className="mt-auto flex flex-wrap gap-2">
+        {!r.current_curve && (
+          <Chip>
+            <Warning size={16} aria-hidden="true" /> Sin curva cota–volumen
+          </Chip>
+        )}
+        {r.current_curve?.notes?.includes('SINTÉTICA') && (
+          <Chip>
+            <Warning size={16} aria-hidden="true" /> Datos sintéticos
+          </Chip>
+        )}
+        {!r.has_geometry && (
+          <Chip tone="muted">
+            <MapPinSimpleArea size={16} aria-hidden="true" /> Sin polígono
+          </Chip>
+        )}
+      </div>
+    </Link>
   )
 }
 
 export function ReservoirsPage() {
-  const { data, isPending, isError, error } = useReservoirs()
+  const reservoirs = useReservoirs()
+  const statuses = useStatuses()
+  const byCode = new Map(statuses.data?.map((s) => [s.reservoir_code, s]))
 
   return (
     <>
       <PageHeader
         title="Embalses"
-        description="Datos de referencia de cada embalse. El nivel actual, la proyección y el semáforo se incorporan en las próximas iteraciones."
+        description="Estado actual de cada embalse según el último registro diario. La proyección a 30, 60 y 90 días llega en la Iteración 4."
       />
-      {isPending && <Spinner label="Cargando embalses…" />}
-      {isError && <Alert tone="error" title="No se pudieron cargar los embalses">{error.message}</Alert>}
-      {data && data.length === 0 && (
+      {reservoirs.isPending && <Spinner label="Cargando embalses…" />}
+      {reservoirs.isError && <Alert tone="error" title="No se pudieron cargar los embalses">{reservoirs.error.message}</Alert>}
+      {statuses.isError && <Alert tone="warning">No se pudo calcular el estado operativo: {statuses.error.message}</Alert>}
+      {reservoirs.data && reservoirs.data.length === 0 && (
         <EmptyState title="No tienes embalses asignados">Pide a Gerencia que te asigne los embalses con los que trabajas.</EmptyState>
       )}
-      {data && data.length > 0 && (
+      {reservoirs.data && reservoirs.data.length > 0 && (
         <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {data.map((r) => (
+          {reservoirs.data.map((r) => (
             <li key={r.code}>
-              <Link
-                to={`/embalses/${r.code}`}
-                className="group block h-full rounded-lg border border-border bg-surface p-5 shadow-sm transition-shadow hover:shadow-md"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <h2 className="text-xl font-semibold">{r.name}</h2>
-                    <p className="text-sm text-muted-foreground">{r.basin ?? 'Cuenca por definir'}</p>
-                  </div>
-                  <CaretRight size={22} aria-hidden="true" className="mt-1 text-muted-foreground group-hover:text-accent" />
-                </div>
-                <dl className="mt-4 grid grid-cols-2 gap-3">
-                  <Stat label="Cota normal" value={`${fmt(r.normal_level)} m`} title={es.glossary.normal} />
-                  <Stat label="Cota vol. muerto" value={`${fmt(r.dead_level)} m`} title={es.glossary.dead} />
-                  <Stat
-                    label="Capacidad útil"
-                    value={r.useful_capacity_hm3 !== null ? `${fmt(r.useful_capacity_hm3, 1)} hm³` : '—'}
-                    title={es.glossary.useful}
-                  />
-                  <Stat label="Registros desde" value={r.records_start ? r.records_start.slice(0, 4) : '—'} />
-                </dl>
-                <div className="mt-4 flex flex-wrap gap-2 text-sm">
-                  {!r.current_curve && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-status-alert-bg px-2 py-1 font-semibold text-status-alert">
-                      <Warning size={16} aria-hidden="true" /> Sin curva cota–volumen
-                    </span>
-                  )}
-                  {r.current_curve?.notes?.includes('SINTÉTICA') && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-status-alert-bg px-2 py-1 font-semibold text-status-alert">
-                      <Warning size={16} aria-hidden="true" /> Curva sintética
-                    </span>
-                  )}
-                  {!r.has_geometry && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-muted-foreground">
-                      <MapPinSimpleArea size={16} aria-hidden="true" /> Sin polígono
-                    </span>
-                  )}
-                </div>
-              </Link>
+              <ReservoirCard r={r} s={byCode.get(r.code)} />
             </li>
           ))}
         </ul>

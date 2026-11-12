@@ -9,6 +9,7 @@ import { useAuth } from '../../auth/AuthContext'
 import { Alert, Button, Card, EmptyState, PageHeader, Spinner, TextField } from '../../components/ui'
 import { fmt } from '../../lib/format'
 import { es } from '../../i18n/es'
+import { BalanceSection, RecentMeasurements, StatusCard } from './OperationSections'
 
 const THRESHOLD_FIELDS: { key: keyof Omit<Thresholds, 'updated_at'>; label: string; hint: string }[] = [
   { key: 'low_critical', label: 'Nivel bajo crítico', hint: 'Por debajo: situación crítica de escasez.' },
@@ -209,6 +210,9 @@ export function ReservoirDetailPage() {
       {r && (
         <div className="space-y-6">
           <PageHeader title={`Embalse ${r.name}`} description={r.description ?? undefined} />
+          <StatusCard code={r.code} />
+          <RecentMeasurements code={r.code} />
+          <BalanceSection code={r.code} />
           <Card>
             <h2 className="text-xl font-semibold">Ficha técnica</h2>
             <dl className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

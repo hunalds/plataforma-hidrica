@@ -1,8 +1,8 @@
-import { ClipboardText, Drop, Gauge, List, SignOut, UserCircle, Users, Waves, X } from '@phosphor-icons/react'
+import { ClipboardText, Drop, FileArrowUp, Gauge, List, NotePencil, SignOut, UserCircle, Users, Waves, X } from '@phosphor-icons/react'
 import { useEffect, useState, type ComponentType } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router'
 
-import { MODULES, ROLE_LABELS, type ModuleKey } from '../api/types'
+import { MODULES, ROLE_LABELS, type ModuleKey, type Role } from '../api/types'
 import { useAuth } from '../auth/AuthContext'
 import { es } from '../i18n/es'
 
@@ -11,11 +11,15 @@ interface NavItem {
   label: string
   icon: ComponentType<{ size?: number; 'aria-hidden'?: boolean | 'true' }>
   module?: ModuleKey
+  level?: 'READ' | 'MANAGE'
+  hideFor?: Role[]
 }
 
 // Solo se muestran los módulos ya construidos; los demás se agregan en sus iteraciones.
 const NAV: NavItem[] = [
   { to: '/', label: es.nav.reservoirs, icon: Waves, module: MODULES.reservoirs },
+  { to: '/registro', label: es.nav.dailyEntry, icon: NotePencil, module: MODULES.ingest, level: 'MANAGE' },
+  { to: '/importar', label: es.nav.import, icon: FileArrowUp, module: MODULES.ingest, level: 'MANAGE', hideFor: ['OPERADOR'] },
   { to: '/usuarios', label: es.nav.users, icon: Users, module: MODULES.users },
   { to: '/auditoria', label: es.nav.audit, icon: ClipboardText, module: MODULES.audit },
   { to: '/estado', label: es.nav.status, icon: Gauge },
@@ -27,7 +31,7 @@ export function AppShell() {
   const location = useLocation()
   useEffect(() => setOpen(false), [location.pathname])
 
-  const items = NAV.filter((i) => !i.module || can(i.module))
+  const items = NAV.filter((i) => (!i.module || can(i.module, i.level)) && !(user && i.hideFor?.includes(user.role)))
 
   const navList = (
     <ul className="flex flex-col gap-1">

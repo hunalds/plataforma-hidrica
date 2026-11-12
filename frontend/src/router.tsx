@@ -1,12 +1,14 @@
 import type { RouteObject } from 'react-router'
 
 import { MODULES } from './api/types'
-import { AnonymousOnly, RequireAuth, RequirePermission } from './auth/guards'
+import { AnonymousOnly, RequireAuth, RequireImporter, RequirePermission } from './auth/guards'
 import { AppShell, AuthLayout } from './components/AppShell'
 import { AuditPage } from './pages/admin/AuditPage'
 import { UsersPage } from './pages/admin/UsersPage'
 import { LoginPage } from './pages/auth/LoginPage'
 import { ChangePasswordPage, ForgotPasswordPage, ResetPasswordPage } from './pages/auth/PasswordPages'
+import { DailyEntryPage } from './pages/ingest/DailyEntryPage'
+import { ImportPage } from './pages/ingest/ImportPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { ReservoirDetailPage } from './pages/reservoirs/ReservoirDetailPage'
 import { ReservoirsPage } from './pages/reservoirs/ReservoirsPage'
@@ -39,6 +41,13 @@ export const routes: RouteObject[] = [
             children: [
               { index: true, element: <ReservoirsPage /> },
               { path: 'embalses/:code', element: <ReservoirDetailPage /> },
+            ],
+          },
+          {
+            element: <RequirePermission module={MODULES.ingest} level="MANAGE" />,
+            children: [
+              { path: 'registro', element: <DailyEntryPage /> },
+              { element: <RequireImporter />, children: [{ path: 'importar', element: <ImportPage /> }] },
             ],
           },
           {

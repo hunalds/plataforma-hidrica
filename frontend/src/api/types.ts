@@ -96,3 +96,109 @@ export const ROLE_LABELS: Record<Role, string> = {
   INGENIERO: 'Ingeniero / Analista',
   OPERADOR: 'Operador',
 }
+
+// --- Iteración 2: movimiento diario, estado operativo e importación ---
+
+export type Light = 'verde' | 'amarillo' | 'rojo' | 'gris'
+export type Direction = 'normal' | 'escasez' | 'inundacion_alivio'
+
+export interface ReservoirStatus {
+  reservoir_code: string
+  reservoir_name: string
+  last_day: string | null
+  last_reading_time: string | null
+  days_since_last: number | null
+  is_stale: boolean
+  level_m: number | null
+  volume_hm3: number | null
+  dead_volume_hm3: number | null
+  normal_volume_hm3: number | null
+  useful_volume_hm3: number | null
+  useful_capacity_hm3: number | null
+  availability_pct: number | null
+  reserve_days: number | null
+  spill_hm3: number | null
+  is_spilling: boolean | null
+  inflow_m3s: number | null
+  outflow_m3s: number | null
+  eco_flow_m3s: number | null
+  light: Light
+  direction: Direction
+  light_reason: string
+  thresholds_defined: boolean
+  level_change_7d_m: number | null
+  curve_version: number | null
+  missing_curve: boolean
+}
+
+export interface Measurement {
+  day: string
+  reading_time: string | null
+  level_m: number
+  volume_hm3: number | null
+  volume_source: 'REPORTADO' | 'CURVA' | null
+  inflow_m3s: number | null
+  outflow_m3s: number | null
+  eco_flow_m3s: number | null
+  gate_opening_pct: number | null
+  intake_m3s: number | null
+  notes: string | null
+  quality_flags: string[] | null
+  source: 'MANUAL' | 'IMPORT' | 'SQL'
+  created_at: string
+  useful_volume_hm3: number | null
+  availability_pct: number | null
+  reserve_days: number | null
+  spill_hm3: number | null
+}
+
+export interface QualityIssue {
+  severity: 'error' | 'aviso'
+  code: string
+  message: string
+  row: number | null
+  reservoir: string | null
+  day: string | null
+  field: string | null
+}
+
+export interface ImportBatch {
+  id: string
+  filename: string
+  status: 'PREVIEW' | 'CONFIRMED' | 'DISCARDED'
+  created_at: string
+  confirmed_at: string | null
+  summary: {
+    filas_leidas: number
+    filas_validas: number
+    filas_con_error: number
+    errores: number
+    avisos: number
+    por_embalse: Record<string, { desde: string; hasta: string; filas_validas: number; nuevas: number; existentes: number; dias_faltantes: number }>
+  }
+  issues: QualityIssue[]
+  issues_total: number
+  sample: (Partial<Measurement> & { reservoir_code: string })[]
+}
+
+export interface BalanceDay {
+  day: string
+  level_m: number
+  volume_hm3: number | null
+  inflow_hm3: number
+  outflow_hm3: number
+  eco_hm3: number
+  net_hm3: number
+  observed_change_hm3: number | null
+  spill_estimate_hm3: number
+  residual_hm3: number | null
+}
+
+export interface Balance {
+  reservoir_code: string
+  date_from: string
+  date_to: string
+  days: BalanceDay[]
+  totals: Record<string, number | null>
+  note: string
+}
