@@ -34,6 +34,8 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "N"]
+# X / Y en mayúscula es la convención de ML (matriz de variables / objetivos)
+ignore = ["N803", "N806"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["hidrica_ml"]
