@@ -3,6 +3,7 @@
 from app.models.audit import AuditLog
 from app.models.base import Base
 from app.models.measurement import BatchStatus, DailyMeasurement, ImportBatch, MeasurementSource, VolumeSource
+from app.models.ml import MLModel
 from app.models.reservoir import ElevationCurve, ElevationCurvePoint, Reservoir, Threshold
 from app.models.satellite import Job, JobStatus, SatelliteObservation, Scope
 from app.models.user import PasswordResetToken, RefreshToken, Role, User, user_reservoir
@@ -17,6 +18,7 @@ __all__ = [
     "VolumeSource",
     "ElevationCurve",
     "Job",
+    "MLModel",
     "JobStatus",
     "SatelliteObservation",
     "Scope",

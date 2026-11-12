@@ -6,6 +6,8 @@
     uv run python -m app.cli load-synthetic-curves      # curvas SINTÉTICAS (solo desarrollo)
     uv run python -m app.cli load-synthetic-measurements  # histórico SINTÉTICO hasta 2026-10-15
     uv run python -m app.cli load-geometries            # polígonos OSM + área de influencia provisional
+    uv run python -m app.cli load-synthetic-satellite   # lluvia y humedad SINTÉTICAS coherentes (para ML)
+    uv run python -m app.cli train-models               # backtesting + entrenamiento (puede tardar)
     uv run python -m app.cli satellite --kind precipitacion --from 2005-01-01 --to 2026-11-10
 
 Las contraseñas generadas son temporales: se muestran una sola vez y deben cambiarse al entrar.
@@ -234,6 +236,87 @@ def cmd_satellite(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_load_synthetic_satellite(args: argparse.Namespace) -> int:
+    """Carga lluvia y humedad del suelo SINTÉTICAS (fuente "sintetico") para entrenar con datos coherentes."""
+    import csv as _csv
+
+    from app.models.satellite import Scope
+    from app.services.satellite import ingest as sat_ingest
+    from app.services.satellite.base import Quality, SatelliteObservation, Variable
+
+    if get_settings().app_env == "production":
+        print("Los datos sintéticos no se cargan en producción.", file=sys.stderr)
+        return 1
+    path = Path(args.file)
+    if not path.exists():
+        print(
+            f"No se encontró {path}. Genéralo con: cd ml; uv run python -m hidrica_ml.synthetic_satellite",
+            file=sys.stderr,
+        )
+        return 1
+    obs = []
+    with path.open(encoding="utf-8") as fh:
+        for row in _csv.DictReader(fh):
+            d = date.fromisoformat(row["fecha"])
+            for var, col in (
+                (Variable.PRECIPITATION, "precipitacion_mm"),
+                (Variable.SOIL_MOISTURE, "humedad_suelo_m3m3"),
+            ):
+                obs.append(
+                    SatelliteObservation(
+                        day=d,
+                        area_code=row["embalse"],
+                        variable=var,
+                        value=float(row[col]),
+                        source="sintetico",
+                        quality=Quality.GOOD,
+                        meta={"SINTETICO": True},
+                    )
+                )
+    with _session() as s:
+        seed_reservoirs(s)
+        n = sat_ingest.save(s, obs, Scope.BASIN)
+        log_action(
+            s,
+            "satellite.synthetic",
+            actor_email="cli",
+            entity="satellite",
+            new={"archivo": path.name, "observaciones": n},
+        )
+        s.commit()
+    print(f"Observaciones SINTÉTICAS guardadas: {n}")
+    return 0
+
+
+def cmd_train_models(args: argparse.Namespace) -> int:
+    from app.services import ml_service
+
+    settings = get_settings()
+
+    def progress(fraction: float, message: str) -> None:
+        print(f"  [{fraction:6.1%}] {message}", flush=True)
+
+    with _session() as s:
+        codes = args.reservoirs or [c for (c,) in s.execute(select(Reservoir.code).order_by(Reservoir.code))]
+        try:
+            summary = ml_service.train_and_register(
+                s, settings, codes, tuple(args.kinds), args.test_years, None, progress, fast=args.fast
+            )
+        except ml_service.MLDataError as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+        log_action(s, "ml.train", actor_email="cli", entity="ml_model", new={"resumen": summary})
+        s.commit()
+    for code, info in summary.items():
+        print(f"{code}: modelo activo = {info['modelo_activo']} (MAE medio {info['mae_medio_hm3']} hm³)")
+    if args.report:
+        from app.services.ml_report import write_report
+
+        with _session() as s:
+            print("Informe:", write_report(s, settings))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     parser = argparse.ArgumentParser(
@@ -277,6 +360,20 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--to", dest="date_to", required=True)
     p.add_argument("--reservoirs", nargs="*")
     p.set_defaults(func=cmd_satellite)
+
+    p = sub.add_parser(
+        "load-synthetic-satellite", help="Cargar lluvia y humedad SINTÉTICAS (solo desarrollo)"
+    )
+    p.add_argument("--file", default=str(SYNTHETIC_DIR / "satelite_sintetico.csv"))
+    p.set_defaults(func=cmd_load_synthetic_satellite)
+
+    p = sub.add_parser("train-models", help="Backtesting y entrenamiento de los modelos de predicción")
+    p.add_argument("--reservoirs", nargs="*")
+    p.add_argument("--kinds", nargs="*", default=["persistencia", "estacional", "xgboost", "lstm"])
+    p.add_argument("--test-years", nargs="*", type=int)
+    p.add_argument("--fast", action="store_true", help="LSTM con pocas épocas (pruebas)")
+    p.add_argument("--report", action="store_true", help="Generar ml/reports/backtesting.md al terminar")
+    p.set_defaults(func=cmd_train_models)
 
     args = parser.parse_args(argv)
     return args.func(args)

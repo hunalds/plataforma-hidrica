@@ -40,6 +40,14 @@ class Settings(BaseSettings):
     # Fuente satelital activa (ver app/services/satellite/registry.py)
     satellite_provider: str = "mock"
 
+    # --- Machine Learning (M6) ---
+    # Carpeta de artefactos (fuera de Git). Por defecto ml/models del repositorio.
+    ml_models_dir: Path = ROOT_DIR / "ml" / "models"
+    # Fuente de lluvia/humedad para entrenar: "sintetico" (coherente con el histórico sintético)
+    # o "real" (CHIRPS + ERA5-Land). Cambiar a "real" cuando lleguen los datos de MINAGUAS (C-24).
+    ml_satellite_source: Literal["sintetico", "real"] = "sintetico"
+    ml_reports_dir: Path = ROOT_DIR / "ml" / "reports"
+
     # --- Seguridad (M1) ---
     # En pruebas se acepta un secreto por defecto; en desarrollo/producción debe venir del .env
     jwt_secret: SecretStr = SecretStr("solo-para-pruebas-no-usar-en-produccion-0123456789")

@@ -15,7 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import sessionmaker
 
 from app import __version__
-from app.api import audit, auth, health, ingest, measurements, reservoirs, satellite, users
+from app.api import audit, auth, health, ingest, measurements, ml, reservoirs, satellite, users
 from app.core.config import Settings, get_settings
 from app.core.logging import configure_logging, get_logger
 from app.core.rate_limit import SlidingWindowLimiter
@@ -78,6 +78,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # measurements va antes que reservoirs: /reservoirs/status no debe confundirse con /reservoirs/{code}
     app.include_router(measurements.router)
     app.include_router(satellite.router)
+    app.include_router(ml.router)
     app.include_router(reservoirs.router)
     return app
 
